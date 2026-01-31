@@ -1,0 +1,95 @@
+You are implementing the orchestrator for RegWatch. This module coordinates the 4-agent pipeline (scraper → analysis → impact → remediation). It manages permission modes (auto-apply, request-approval, notify-only) and enforces safety guardrails (never auto-apply security patches, require approval for breaking changes). The orchestrator triggers pdd sync via GitHub Issues, creates pull requests, logs all changes, and implements event-driven architecture with agent coordination and error handling.
+
+Requirements
+
+1. Implement run_monitoring_cycle() -> Dict[str, Any] that executes the full pipeline and returns results with changes detected and actions taken
+2. Implement coordinate_agents(regulation_change: Dict) -> Dict that orchestrates analysis → impact → remediation for a single change
+3. Implement check_permission_mode(change_type: str, severity: str) -> str that returns permission decision
+4. Execute pipeline stages sequentially: scraper → analysis → impact → remediation
+5. Handle agent failures gracefully: log errors, continue with next change, retry failed stages
+6. Implement permission mode logic: check change type and severity before applying fixes
+7. Safety guardrails: critical security changes require approval, breaking changes need review
+8. Use asyncio for concurrent processing of multiple regulation changes
+9. Log all actions with change_tracker: regulation detected, analysis complete, impact assessed, remediation applied
+10. Provide monitoring dashboard data: pipeline status, active changes, pending approvals, error log
+
+Dependencies
+
+<scraper_agent>
+  <include>src/agents/scraper_agent.py</include>
+</scraper_agent>
+
+<analysis_agent>
+  <include>src/agents/analysis_agent.py</include>
+</analysis_agent>
+
+<impact_agent>
+  <include>src/agents/impact_agent.py</include>
+</impact_agent>
+
+<remediation_agent>
+  <include>src/agents/remediation_agent.py</include>
+</remediation_agent>
+
+<change_tracker>
+  <include>src/change_tracker.py</include>
+</change_tracker>
+
+<voice_service>
+  <include>src/voice_service.py</include>
+</voice_service>
+
+<asyncio_for_concurrent_agent_coordination>
+  <web>https://docs.python.org/3/library/asyncio.html</web>
+</asyncio_for_concurrent_agent_coordination>
+
+Prompt Dependencies
+
+This module depends on: scraper_agent_Python.prompt, analysis_agent_Python.prompt, impact_agent_Python.prompt, remediation_agent_Python.prompt, change_tracker_Python.prompt, voice_service_Python.prompt
+
+Instructions
+
+- Import all agent modules: scraper_agent, analysis_agent, impact_agent, remediation_agent
+- Implement run_monitoring_cycle as main entry point
+- Stage 1: Call scraper_agent.monitor_regulatory_sources() to get new/updated regulations
+- For each regulation change, call coordinate_agents(regulation_change)
+- Stage 2 (in coordinate_agents): Call analysis_agent.analyze_regulation_change() to classify change
+- Stage 3: Call impact_agent.assess_customer_impact() with affected_checkers from analysis
+- Stage 4: Determine permission mode with check_permission_mode(change_type, severity)
+- Safety guardrail: if change_type == 'security' or severity == 'critical', override to 'request-approval'
+- Stage 5: Call remediation_agent.update_prompt_file() to update prompts
+- Stage 6: Call remediation_agent.trigger_pdd_sync() to regenerate checkers
+- Stage 7: For each affected customer, call remediation_agent.create_remediation_pr()
+- Use change_tracker.log_regulation_change() after each stage
+- Implement error handling: wrap each agent call in try/except, log errors, continue pipeline
+- Use asyncio for concurrent processing: asyncio.gather(*[coordinate_agents(change) for change in changes])
+- Implement retry logic for transient failures: retry up to 3 times with exponential backoff
+- Use voice_service to narrate pipeline progress: "New regulation detected", "Analysis complete", "Impact assessed"
+- Return pipeline results: {total_changes, analyzed, impacted_customers, prs_created, errors}
+- Create pytest test suite with mocked agents
+- Test cases: full pipeline, agent failures, permission modes, safety guardrails, concurrent processing
+- Use pytest-asyncio for async test support
+
+Deliverable
+
+- Python module at src/orchestrator.py
+- Three main functions: run_monitoring_cycle, coordinate_agents, check_permission_mode
+- Agent coordination logic
+- Error handling and retry mechanism
+- Permission mode and safety guardrail enforcement
+- Asyncio integration for concurrent processing
+- Change tracking integration
+- Voice narration integration
+- Test suite in tests/test_orchestrator.py
+- Configuration for retry attempts and timeouts
+- Docstrings with pipeline flow examples
+
+Implementation assumptions
+
+- All agents are importable and functional
+- Changes can be processed concurrently (independent)
+- Permission modes configurable globally and per customer
+- Safety guardrails hardcoded (not configurable)
+- Pipeline runs on schedule (cron) or manual trigger
+
+Please produce production-ready code that implements the orchestrator.

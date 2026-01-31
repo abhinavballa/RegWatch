@@ -1,0 +1,63 @@
+You are implementing the change tracking service for RegWatch. This module records every regulation update detected by agents, tracks prompt file modifications using git diff, and documents test accumulation (47 tests → 50 tests → 54 tests). It stores change log entries with timestamp, regulation ID, old/new text comparison, affected checkers, customer impact count, severity level, and code changes in logs/regulation_changes.json. The module provides semantic diff capabilities using difflib for regulation comparison.
+
+Requirements
+
+1. Implement log_regulation_change(regulation_id, old_text, new_text, severity, affected_checkers) -> str that creates a change log entry and returns entry ID
+2. Implement get_change_history(regulation_id=None) -> List[Dict] to retrieve change log entries, optionally filtered by regulation ID
+3. Implement semantic_diff(old_text, new_text) -> Dict[str, Any] that performs semantic text comparison and returns structured diff
+4. Store change logs in JSON format at logs/regulation_changes.json with atomic writes
+5. Each log entry must include: entry_id (UUID), timestamp (ISO 8601), regulation_id, old_text, new_text, severity (critical/high/medium), affected_checkers (list), customer_impact_count, code_changes (git diff summary)
+6. Use difflib to generate semantic diffs with added/removed/changed sections
+7. Track prompt file modifications by running git diff on prompts/ directory
+8. Document test accumulation: count tests before/after in test files
+9. Provide summary statistics: total changes, changes by severity, most frequently changed regulations
+10. Handle concurrent writes with file locking or atomic JSON updates
+
+Dependencies
+
+<python_difflib_for_semantic_text_comparison_of_regulations>
+  <web>https://docs.python.org/3/library/difflib.html</web>
+</python_difflib_for_semantic_text_comparison_of_regulations>
+
+<json_storage_for_change_log_entries>
+  <web>https://docs.python.org/3/library/json.html</web>
+</json_storage_for_change_log_entries>
+
+Instructions
+
+- Use uuid.uuid4() to generate unique entry IDs
+- Use datetime.utcnow().isoformat() for timestamps
+- Implement JSON file locking with fcntl (Unix) or msvcrt (Windows) for atomic updates
+- Create logs/ directory if it doesn't exist
+- Use difflib.unified_diff() for line-by-line comparison
+- Implement difflib.SequenceMatcher for semantic similarity scoring
+- Classify changes: added sections, removed sections, modified sections
+- Integrate with git subprocess to get diff output for prompt files
+- Parse git diff to count modified lines, files changed
+- Count test functions (def test_*) in test files before/after changes
+- Implement get_change_history with filtering, sorting (newest first), pagination support
+- Create summary functions: get_statistics(), get_changes_by_severity(), get_most_changed_regulations()
+- Handle edge cases: empty logs file, corrupted JSON, concurrent access
+- Implement pytest test suite with temporary logs directory
+- Test cases: create entry, retrieve all, filter by regulation, semantic diff, concurrent writes, test count tracking
+- Use pytest fixtures for temporary file system and sample regulation text
+
+Deliverable
+
+- Python module at src/change_tracker.py
+- Three main functions: log_regulation_change, get_change_history, semantic_diff
+- Helper functions: atomic JSON read/write, git diff integration, test counting
+- Summary statistics functions
+- File locking mechanism for concurrent access
+- Test suite in tests/test_change_tracker.py
+- Sample change log entries for documentation
+- Docstrings with usage examples
+
+Implementation assumptions
+
+- JSON storage for simplicity and human readability
+- Git repository context for tracking prompt changes
+- Test files follow pytest naming conventions (test_*.py, def test_*)
+- Semantic diff focuses on regulation text changes, not code diffs
+
+Please produce production-ready code that implements the change tracking service.

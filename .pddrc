@@ -1,0 +1,120 @@
+version: "1.0"
+
+contexts:
+  # ============================================================
+  # HIPAA COMPLIANCE CHECKERS (PDD-Generated)
+  # ============================================================
+
+  hipaa_encryption_checker:
+    paths: ["*hipaa_encryption_checker*"]
+    defaults:
+      outputs:
+        code:
+          path: "src/checkers/hipaa_encryption_checker.py"
+
+  hipaa_access_control_checker:
+    paths: ["*hipaa_access_control_checker*"]
+    defaults:
+      outputs:
+        code:
+          path: "src/checkers/hipaa_access_control_checker.py"
+
+  hipaa_audit_logging_checker:
+    paths: ["*hipaa_audit_logging_checker*"]
+    defaults:
+      outputs:
+        code:
+          path: "src/checkers/hipaa_audit_logging_checker.py"
+
+  # ============================================================
+  # CORE SERVICES
+  # ============================================================
+
+  change_tracker:
+    paths: ["*change_tracker*"]
+    defaults:
+      outputs:
+        code:
+          path: "src/change_tracker.py"
+
+  voice_service:
+    paths: ["*voice_service*"]
+    defaults:
+      outputs:
+        code:
+          path: "src/voice_service.py"
+
+  # ============================================================
+  # VALIDATORS
+  # ============================================================
+
+  patient_data_validator:
+    paths: ["*patient_data_validator*"]
+    defaults:
+      outputs:
+        code:
+          path: "src/validators/patient_data_validator.py"
+
+  # ============================================================
+  # AGENTS
+  # ============================================================
+
+  scraper_agent:
+    paths: ["*scraper_agent*"]
+    defaults:
+      outputs:
+        code:
+          path: "src/agents/scraper_agent.py"
+
+  analysis_agent:
+    paths: ["*analysis_agent*"]
+    defaults:
+      outputs:
+        code:
+          path: "src/agents/analysis_agent.py"
+
+  impact_agent:
+    paths: ["*impact_agent*"]
+    defaults:
+      outputs:
+        code:
+          path: "src/agents/impact_agent.py"
+
+  remediation_agent:
+    paths: ["*remediation_agent*"]
+    defaults:
+      outputs:
+        code:
+          path: "src/agents/remediation_agent.py"
+
+  # ============================================================
+  # ORCHESTRATION
+  # ============================================================
+
+  orchestrator:
+    paths: ["*orchestrator*"]
+    defaults:
+      outputs:
+        code:
+          path: "src/orchestrator.py"
+
+  # ============================================================
+  # WEB DASHBOARD
+  # ============================================================
+
+  web_dashboard:
+    paths: ["*web_dashboard*"]
+    defaults:
+      outputs:
+        code:
+          path: "web/app.py"
+
+  # ============================================================
+  # DEFAULT FALLBACK
+  # ============================================================
+  # CRITICAL: prompts_dir goes ONLY here, not in other contexts!
+
+  default:
+    defaults:
+      prompts_dir: "prompts/"
+      generate_output_path: "src/"

@@ -1,0 +1,77 @@
+You are implementing the scraper agent for RegWatch. This module uses Toolhouse web_search to monitor HHS.gov, FDA.gov, and Federal Register for new regulatory publications. It detects regulation updates, extracts regulation text, and triggers the analysis pipeline. The module uses requests and BeautifulSoup for web scraping with safe parsing, implements polling schedule and caching to avoid duplicate processing, and returns structured regulation data with source URL, publication date, and extracted text.
+
+Requirements
+
+1. Implement monitor_regulatory_sources() -> List[Dict[str, Any]] that checks all sources and returns new publications
+2. Implement extract_regulation_text(url: str) -> str that fetches and parses regulation content from a URL
+3. Implement detect_changes(regulation_id: str, current_text: str) -> Optional[Dict] that compares with cached version
+4. Monitor three sources: HHS.gov (/hipaa), FDA.gov (/regulatory-information), FederalRegister.gov (/health)
+5. Use requests library with proper headers (User-Agent) and timeouts (30 seconds)
+6. Use BeautifulSoup with 'lxml' parser for HTML parsing
+7. Implement caching mechanism to store previously seen regulation IDs and checksums (SHA-256 of text)
+8. Cache storage in JSON file: cache/scraped_regulations.json with {regulation_id: {checksum, last_seen, url}}
+9. Implement polling schedule: configurable interval (default: daily check)
+10. Return structured data: {regulation_id, title, url, publication_date, source, text_content, change_detected}
+
+Dependencies
+
+<change_tracker>
+  <include>src/change_tracker.py</include>
+</change_tracker>
+
+<requests_library_for_http_operations>
+  <web>https://docs.python-requests.org/en/latest/</web>
+</requests_library_for_http_operations>
+
+<beautifulsoup_for_html_parsing>
+  <web>https://www.crummy.com/software/BeautifulSoup/bs4/doc/</web>
+</beautifulsoup_for_html_parsing>
+
+Prompt Dependencies
+
+This module depends on: change_tracker_Python.prompt
+
+Instructions
+
+- Use requests.get() with headers={'User-Agent': 'RegWatch/1.0'} and timeout=30
+- Parse HTML with BeautifulSoup(html, 'lxml')
+- For HHS.gov: find regulation updates in main content div, extract title, date, URL
+- For FDA.gov: parse regulatory updates feed, extract regulation ID, publication date
+- For FederalRegister.gov: use RSS feed or HTML parsing of health category
+- Implement extract_regulation_text: fetch URL, parse HTML, extract text from main content (remove nav, footer)
+- Generate regulation_id: normalize title to lowercase, replace spaces with hyphens
+- Calculate checksum: hashlib.sha256(text_content.encode()).hexdigest()
+- Load cache from cache/scraped_regulations.json (create if doesn't exist)
+- For each regulation, compare checksum with cached version
+- If checksum differs or regulation is new, set change_detected=True
+- Update cache with new checksum and timestamp
+- Save cache atomically (write to temp file, then rename)
+- Use change_tracker.log_regulation_change() when change detected
+- Handle HTTP errors: 404, 500, timeouts - log and continue to next source
+- Implement exponential backoff for rate limiting (429 status)
+- Create pytest test suite with mocked HTTP responses
+- Test cases: new regulation, updated regulation, no changes, HTTP errors, invalid HTML, cache operations
+- Use pytest-mock and responses library for HTTP mocking
+
+Deliverable
+
+- Python module at src/agents/scraper_agent.py
+- Three main functions: monitor_regulatory_sources, extract_regulation_text, detect_changes
+- HTTP client with proper headers and error handling
+- BeautifulSoup parsing for each source
+- Caching mechanism with checksum comparison
+- Integration with change_tracker module
+- Test suite in tests/test_scraper_agent.py with mocked HTTP
+- Sample cache file structure
+- Configuration for polling interval and sources
+- Docstrings with source-specific parsing examples
+
+Implementation assumptions
+
+- HTML structure of regulatory websites remains relatively stable
+- Regulation IDs can be derived from titles or URLs
+- Text content is in main article/content div
+- Cache directory created if doesn't exist
+- Toolhouse integration optional (fallback to direct HTTP if not available)
+
+Please produce production-ready code that implements the scraper agent.

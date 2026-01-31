@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>RegWatch (HIPAA Case)</title>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+mermaid.initialize({startOnLoad:true,theme:'default'});
+window.addEventListener('load', () => {
+    const moduleData = {"hipaa_encryption_checker_Python": {"filename": "hipaa_encryption_checker_Python.prompt", "priority": 1, "description": "Python module that uses AST parsing to analyze source code for HIPAA \u00a7 164.312(a)(2)(iv) encryption violations. Validates AES-256-GCM encryption for ePHI at rest, TLS 1.2+ for data in transit, field-level PHI encryption, and key management practices (separate storage, 90-day rotation). Returns violation reports with line numbers, regulation references, and remediation suggestions. Implements test accumulation pattern where tests are never deleted, only added.", "dependencies": [], "tags": ["hipaa", "checker", "encryption", "pdd-generated"], "filepath": "src/checkers/hipaa_encryption_checker.py"}, "hipaa_access_control_checker_Python": {"filename": "hipaa_access_control_checker_Python.prompt", "priority": 2, "description": "Python module that uses AST parsing to analyze source code for HIPAA \u00a7 164.312(a)(1) access control violations. Validates unique user IDs, role-based access control (RBAC), authentication on all endpoints, session management (15-min timeout), and multi-factor authentication for remote access. Returns violation reports with line numbers and remediation guidance. Implements test accumulation pattern.", "dependencies": [], "tags": ["hipaa", "checker", "access-control", "pdd-generated"], "filepath": "src/checkers/hipaa_access_control_checker.py"}, "hipaa_audit_logging_checker_Python": {"filename": "hipaa_audit_logging_checker_Python.prompt", "priority": 3, "description": "Python module that uses AST parsing to analyze source code for HIPAA \u00a7 164.312(b) audit logging violations. Validates that all ePHI access is logged with timestamp, user, action, and resource. Checks log retention (6+ years), tamper-proof storage, and automated anomaly detection. Returns violation reports with specific logging requirements. Implements test accumulation pattern.", "dependencies": [], "tags": ["hipaa", "checker", "audit", "pdd-generated"], "filepath": "src/checkers/hipaa_audit_logging_checker.py"}, "change_tracker_Python": {"filename": "change_tracker_Python.prompt", "priority": 4, "description": "Python module that records every regulation update detected by agents, tracks prompt file modifications using git diff, and documents test accumulation (47 tests \u2192 50 tests \u2192 54 tests). Stores change log entries with timestamp, regulation ID, old/new text comparison, affected checkers, customer impact count, severity level, and code changes. Uses JSON storage in logs/regulation_changes.json. Provides semantic diff capabilities using difflib for regulation comparison.", "dependencies": [], "tags": ["core", "audit", "tracking"], "filepath": "src/change_tracker.py"}, "voice_service_Python": {"filename": "voice_service_Python.prompt", "priority": 5, "description": "Python module that integrates ElevenLabs API for text-to-speech generation. Provides real-time scan narration during compliance checks, generates 2-3 minute executive briefings summarizing compliance status and violations, broadcasts regulation change alerts, and supports conversational AI for voice queries. Uses professional voice (Rachel) with low-latency Turbo v2.5 model. Handles audio streaming and file generation.", "dependencies": [], "tags": ["core", "voice", "elevenlabs"], "filepath": "src/voice_service.py"}, "patient_data_validator_Python": {"filename": "patient_data_validator_Python.prompt", "priority": 6, "description": "Python module that validates patient records against HIPAA requirements using pandas for CSV processing and schema validation. Checks consent form completeness, encryption of PHI (SSN, medical records), access log presence, and data retention compliance. Supports chunked processing for large datasets (50,000+ records). Returns list of non-compliant records with specific violations and patient IDs. Uses Pandera/PandasSchema for data validation.", "dependencies": [], "tags": ["validator", "data", "hipaa"], "filepath": "src/validators/patient_data_validator.py"}, "scraper_agent_Python": {"filename": "scraper_agent_Python.prompt", "priority": 7, "description": "Python module using Toolhouse web_search to monitor HHS.gov, FDA.gov, and Federal Register for new regulatory publications. Detects regulation updates, extracts regulation text, and triggers analysis pipeline. Uses requests and BeautifulSoup for web scraping with safe parsing. Implements polling schedule and caching to avoid duplicate processing. Returns structured regulation data with source URL, publication date, and extracted text.", "dependencies": ["change_tracker_Python.prompt"], "tags": ["agent", "scraper", "toolhouse"], "filepath": "src/agents/scraper_agent.py"}, "analysis_agent_Python": {"filename": "analysis_agent_Python.prompt", "priority": 8, "description": "Python module using Toolhouse RAG and LLM to perform semantic diff between old and new regulation text. Identifies substantive changes versus clarifications, determines severity (critical/high/medium), and maps changes to affected compliance checkers. Uses natural language processing to understand regulatory intent and impact. Returns structured analysis with change classification and affected modules.", "dependencies": ["change_tracker_Python.prompt"], "tags": ["agent", "analysis", "toolhouse"], "filepath": "src/agents/analysis_agent.py"}, "impact_agent_Python": {"filename": "impact_agent_Python.prompt", "priority": 9, "description": "Python module using Toolhouse code_execution to run affected compliance checkers on all customer codebases. Identifies which customers are now non-compliant after regulation changes, estimates remediation effort, and prioritizes by risk and fine exposure. Supports parallel execution across multiple codebases. Returns impact report with customer list, violation counts, and priority rankings.", "dependencies": ["hipaa_encryption_checker_Python.prompt", "hipaa_access_control_checker_Python.prompt", "hipaa_audit_logging_checker_Python.prompt", "change_tracker_Python.prompt"], "tags": ["agent", "impact", "toolhouse"], "filepath": "src/agents/impact_agent.py"}, "remediation_agent_Python": {"filename": "remediation_agent_Python.prompt", "priority": 10, "description": "Python module that updates prompt files with new regulatory requirements, regenerates compliance checkers using pdd sync via GitHub Issues API, generates code patches for customer codebases, and creates Pull Requests with fixes. Implements permission modes (auto-apply, request-approval, notify-only). Uses PyGithub for GitHub API operations. Handles safe YAML configuration and secure subprocess execution.", "dependencies": ["change_tracker_Python.prompt", "voice_service_Python.prompt"], "tags": ["agent", "remediation", "pdd", "github"], "filepath": "src/agents/remediation_agent.py"}, "orchestrator_Python": {"filename": "orchestrator_Python.prompt", "priority": 11, "description": "Python module that coordinates the 4-agent pipeline (scraper \u2192 analysis \u2192 impact \u2192 remediation). Manages permission modes (auto-apply, request-approval, notify-only) and enforces safety guardrails (never auto-apply security patches, require approval for breaking changes). Triggers pdd sync via GitHub Issues, creates pull requests, and logs all changes. Implements event-driven architecture with agent coordination and error handling.", "dependencies": ["scraper_agent_Python.prompt", "analysis_agent_Python.prompt", "impact_agent_Python.prompt", "remediation_agent_Python.prompt", "change_tracker_Python.prompt", "voice_service_Python.prompt"], "tags": ["core", "orchestration", "coordination"], "filepath": "src/orchestrator.py"}, "web_dashboard_Python": {"filename": "web_dashboard_Python.prompt", "priority": 12, "description": "Python Flask application with Blueprints architecture providing web interface for RegWatch. Implements two main tabs: Code Compliance (codebase upload, real-time scan with voice narration, violation display) and Data Compliance (CSV upload, patient record validation, remediation reports). Includes API endpoints for /api/scan (POST), /api/validate-records (POST), /api/simulate-regulation-change (POST), /api/change-history (GET), and /api/voice-briefing (POST). Uses Jinja2 templating for dynamic content and supports file uploads with progress tracking.", "dependencies": ["hipaa_encryption_checker_Python.prompt", "hipaa_access_control_checker_Python.prompt", "hipaa_audit_logging_checker_Python.prompt", "patient_data_validator_Python.prompt", "orchestrator_Python.prompt", "change_tracker_Python.prompt", "voice_service_Python.prompt"], "tags": ["web", "flask", "dashboard"], "filepath": "web/app.py"}};
+    
+    // Add hover listeners to all nodes
+    setTimeout(() => {
+        const nodes = document.querySelectorAll('.node');
+        nodes.forEach(node => {
+            const text = node.querySelector('.nodeLabel');
+            if (!text) return;
+            
+            const nodeText = text.textContent.trim();
+            const moduleId = nodeText.split(' ')[0];
+            const data = moduleData[moduleId];
+            
+            if (data) {
+                node.style.cursor = 'pointer';
+                
+                node.addEventListener('mouseenter', (e) => {
+                    showTooltip(e, data);
+                });
+                
+                node.addEventListener('mouseleave', () => {
+                    hideTooltip();
+                });
+            }
+        });
+    }, 500);
+});
+function showTooltip(e, data) {
+    hideTooltip();
+    
+    const tooltip = document.createElement('div');
+    tooltip.id = 'module-tooltip';
+    tooltip.innerHTML = `
+        <div style="font-weight:600;margin-bottom:8px;font-size:1.1em;">${data.filename}</div>
+        <div style="margin-bottom:6px;"><strong>Priority:</strong> ${data.priority}</div>
+        <div style="margin-bottom:6px;"><strong>Path:</strong> ${data.filepath}</div>
+        <div style="margin-bottom:6px;"><strong>Tags:</strong> ${data.tags.join(', ')}</div>
+        <div style="margin-bottom:6px;"><strong>Dependencies:</strong> ${data.dependencies.length > 0 ? data.dependencies.join(', ') : 'None'}</div>
+        <div style="margin-top:8px;padding-top:8px;border-top:1px solid #ddd;font-size:0.9em;color:#444;">${data.description}</div>
+    `;
+    
+    document.body.appendChild(tooltip);
+    
+    const rect = e.target.closest('.node').getBoundingClientRect();
+    tooltip.style.left = rect.right + 10 + 'px';
+    tooltip.style.top = rect.top + window.scrollY + 'px';
+}
+function hideTooltip() {
+    const existing = document.getElementById('module-tooltip');
+    if (existing) existing.remove();
+}
+</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,sans-serif;background:#fff;color:#000;padding:2rem;max-width:1400px;margin:0 auto}
+h1{font-size:2rem;font-weight:600;margin-bottom:2rem;padding-bottom:1rem;border-bottom:2px solid #000}
+.diagram{border:1px solid #000;padding:2rem;margin:2rem 0;overflow-x:auto;position:relative}
+.mermaid{display:flex;justify-content:center}
+#module-tooltip{
+    position:absolute;
+    background:#fff;
+    border:2px solid #000;
+    padding:1rem;
+    max-width:400px;
+    z-index:1000;
+    box-shadow:4px 4px 0 rgba(0,0,0,0.1);
+    font-size:0.9rem;
+    line-height:1.5;
+}
+.node{transition:opacity 0.2s}
+.node:hover{opacity:0.8}
+</style></head><body>
+<h1>RegWatch (HIPAA Case)</h1>
+<div class="diagram"><pre class="mermaid">flowchart TB
+        PRD["RegWatch (HIPAA Case)"]
+    
+    subgraph Shared
+        hipaa_encryption_checker_Python["hipaa_encryption_checker_Python (1)"]
+        hipaa_access_control_checker_Python["hipaa_access_control_checker_Python (2)"]
+        hipaa_audit_logging_checker_Python["hipaa_audit_logging_checker_Python (3)"]
+        change_tracker_Python["change_tracker_Python (4)"]
+        voice_service_Python["voice_service_Python (5)"]
+        patient_data_validator_Python["patient_data_validator_Python (6)"]
+        scraper_agent_Python["scraper_agent_Python (7)"]
+        analysis_agent_Python["analysis_agent_Python (8)"]
+        impact_agent_Python["impact_agent_Python (9)"]
+        remediation_agent_Python["remediation_agent_Python (10)"]
+        orchestrator_Python["orchestrator_Python (11)"]
+        web_dashboard_Python["web_dashboard_Python (12)"]
+    end
+    
+    scraper_agent_Python -->|uses| change_tracker_Python
+    analysis_agent_Python -->|uses| change_tracker_Python
+    impact_agent_Python -->|uses| hipaa_encryption_checker_Python
+    impact_agent_Python -->|uses| hipaa_access_control_checker_Python
+    impact_agent_Python -->|uses| hipaa_audit_logging_checker_Python
+    impact_agent_Python -->|uses| change_tracker_Python
+    remediation_agent_Python -->|uses| change_tracker_Python
+    remediation_agent_Python -->|uses| voice_service_Python
+    orchestrator_Python -->|uses| scraper_agent_Python
+    orchestrator_Python -->|uses| analysis_agent_Python
+    orchestrator_Python -->|uses| impact_agent_Python
+    orchestrator_Python -->|uses| remediation_agent_Python
+    orchestrator_Python -->|uses| change_tracker_Python
+    orchestrator_Python -->|uses| voice_service_Python
+    web_dashboard_Python -->|uses| hipaa_encryption_checker_Python
+    web_dashboard_Python -->|uses| hipaa_access_control_checker_Python
+    web_dashboard_Python -->|uses| hipaa_audit_logging_checker_Python
+    web_dashboard_Python -->|uses| patient_data_validator_Python
+    web_dashboard_Python -->|uses| orchestrator_Python
+    web_dashboard_Python -->|uses| change_tracker_Python
+    web_dashboard_Python -->|uses| voice_service_Python
+    
+    classDef frontend fill:#FFF3E0,stroke:#F57C00,stroke-width:2px
+    classDef backend fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    classDef shared fill:#E8F5E9,stroke:#388E3C,stroke-width:2px
+    classDef system fill:#E0E0E0,stroke:#616161,stroke-width:3px
+    
+    class hipaa_encryption_checker_Python,hipaa_access_control_checker_Python,hipaa_audit_logging_checker_Python,change_tracker_Python,voice_service_Python,patient_data_validator_Python,scraper_agent_Python,analysis_agent_Python,impact_agent_Python,remediation_agent_Python,orchestrator_Python,web_dashboard_Python shared
+    class PRD system</pre></div>
+</body></html>

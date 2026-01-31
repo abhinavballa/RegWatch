@@ -1,0 +1,588 @@
+[
+  {
+    "reason": "Core HIPAA encryption compliance checker validating database encryption at rest and in transit",
+    "description": "Python module that uses AST parsing to analyze source code for HIPAA \u00a7 164.312(a)(2)(iv) encryption violations. Validates AES-256-GCM encryption for ePHI at rest, TLS 1.2+ for data in transit, field-level PHI encryption, and key management practices (separate storage, 90-day rotation). Returns violation reports with line numbers, regulation references, and remediation suggestions. Implements test accumulation pattern where tests are never deleted, only added.",
+    "dependencies": [],
+    "priority": 1,
+    "filename": "hipaa_encryption_checker_Python.prompt",
+    "filepath": "src/checkers/hipaa_encryption_checker.py",
+    "tags": [
+      "hipaa",
+      "checker",
+      "encryption",
+      "pdd-generated"
+    ],
+    "context_urls": [
+      {
+        "url": "https://docs.python.org/3/library/ast.html",
+        "purpose": "Python AST module for static code analysis"
+      },
+      {
+        "url": "https://greentreesnakes.readthedocs.io/en/latest/",
+        "purpose": "AST manipulation guide for building code analyzers"
+      },
+      {
+        "url": "https://cryptography.io/en/latest/hazmat/primitives/symmetric-encryption/",
+        "purpose": "Python cryptography library for AES-256-GCM validation"
+      }
+    ],
+    "interface": {
+      "type": "module",
+      "module": {
+        "functions": [
+          {
+            "name": "check_encryption_compliance",
+            "signature": "def check_encryption_compliance(codebase_path: str) -> Dict[str, Any]",
+            "returns": "Dict with violations list, score, and fine exposure"
+          },
+          {
+            "name": "validate_database_encryption",
+            "signature": "def validate_database_encryption(ast_tree: ast.AST) -> List[Violation]",
+            "returns": "List of encryption violations found"
+          },
+          {
+            "name": "validate_tls_configuration",
+            "signature": "def validate_tls_configuration(config_files: List[str]) -> List[Violation]",
+            "returns": "List of TLS configuration violations"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "reason": "Core HIPAA access control compliance checker validating authentication and authorization mechanisms",
+    "description": "Python module that uses AST parsing to analyze source code for HIPAA \u00a7 164.312(a)(1) access control violations. Validates unique user IDs, role-based access control (RBAC), authentication on all endpoints, session management (15-min timeout), and multi-factor authentication for remote access. Returns violation reports with line numbers and remediation guidance. Implements test accumulation pattern.",
+    "dependencies": [],
+    "priority": 2,
+    "filename": "hipaa_access_control_checker_Python.prompt",
+    "filepath": "src/checkers/hipaa_access_control_checker.py",
+    "tags": [
+      "hipaa",
+      "checker",
+      "access-control",
+      "pdd-generated"
+    ],
+    "context_urls": [
+      {
+        "url": "https://docs.python.org/3/library/ast.html",
+        "purpose": "Python AST module for parsing authentication code"
+      },
+      {
+        "url": "https://greentreesnakes.readthedocs.io/en/latest/",
+        "purpose": "AST guide for detecting missing authentication decorators"
+      }
+    ],
+    "interface": {
+      "type": "module",
+      "module": {
+        "functions": [
+          {
+            "name": "check_access_control_compliance",
+            "signature": "def check_access_control_compliance(codebase_path: str) -> Dict[str, Any]",
+            "returns": "Dict with violations list, score, and recommendations"
+          },
+          {
+            "name": "validate_authentication",
+            "signature": "def validate_authentication(ast_tree: ast.AST) -> List[Violation]",
+            "returns": "List of authentication violations"
+          },
+          {
+            "name": "validate_rbac",
+            "signature": "def validate_rbac(ast_tree: ast.AST) -> List[Violation]",
+            "returns": "List of RBAC violations"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "reason": "Core HIPAA audit logging compliance checker validating comprehensive audit trail mechanisms",
+    "description": "Python module that uses AST parsing to analyze source code for HIPAA \u00a7 164.312(b) audit logging violations. Validates that all ePHI access is logged with timestamp, user, action, and resource. Checks log retention (6+ years), tamper-proof storage, and automated anomaly detection. Returns violation reports with specific logging requirements. Implements test accumulation pattern.",
+    "dependencies": [],
+    "priority": 3,
+    "filename": "hipaa_audit_logging_checker_Python.prompt",
+    "filepath": "src/checkers/hipaa_audit_logging_checker.py",
+    "tags": [
+      "hipaa",
+      "checker",
+      "audit",
+      "pdd-generated"
+    ],
+    "context_urls": [
+      {
+        "url": "https://docs.python.org/3/library/ast.html",
+        "purpose": "Python AST for detecting missing logging statements"
+      },
+      {
+        "url": "https://docs.python.org/3/library/audit_events.html",
+        "purpose": "Python audit events for tamper-proof logging"
+      }
+    ],
+    "interface": {
+      "type": "module",
+      "module": {
+        "functions": [
+          {
+            "name": "check_audit_logging_compliance",
+            "signature": "def check_audit_logging_compliance(codebase_path: str) -> Dict[str, Any]",
+            "returns": "Dict with violations list and compliance score"
+          },
+          {
+            "name": "validate_audit_logs",
+            "signature": "def validate_audit_logs(ast_tree: ast.AST) -> List[Violation]",
+            "returns": "List of audit logging violations"
+          },
+          {
+            "name": "validate_log_retention",
+            "signature": "def validate_log_retention(config: Dict) -> List[Violation]",
+            "returns": "List of retention policy violations"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "reason": "Change tracking service for maintaining audit trail of all regulation updates and code modifications",
+    "description": "Python module that records every regulation update detected by agents, tracks prompt file modifications using git diff, and documents test accumulation (47 tests \u2192 50 tests \u2192 54 tests). Stores change log entries with timestamp, regulation ID, old/new text comparison, affected checkers, customer impact count, severity level, and code changes. Uses JSON storage in logs/regulation_changes.json. Provides semantic diff capabilities using difflib for regulation comparison.",
+    "dependencies": [],
+    "priority": 4,
+    "filename": "change_tracker_Python.prompt",
+    "filepath": "src/change_tracker.py",
+    "tags": [
+      "core",
+      "audit",
+      "tracking"
+    ],
+    "context_urls": [
+      {
+        "url": "https://docs.python.org/3/library/difflib.html",
+        "purpose": "Python difflib for semantic text comparison of regulations"
+      },
+      {
+        "url": "https://docs.python.org/3/library/json.html",
+        "purpose": "JSON storage for change log entries"
+      }
+    ],
+    "interface": {
+      "type": "module",
+      "module": {
+        "functions": [
+          {
+            "name": "log_regulation_change",
+            "signature": "def log_regulation_change(regulation_id: str, old_text: str, new_text: str, severity: str, affected_checkers: List[str]) -> str",
+            "returns": "Change log entry ID"
+          },
+          {
+            "name": "get_change_history",
+            "signature": "def get_change_history(regulation_id: Optional[str] = None) -> List[Dict]",
+            "returns": "List of change log entries"
+          },
+          {
+            "name": "semantic_diff",
+            "signature": "def semantic_diff(old_text: str, new_text: str) -> Dict[str, Any]",
+            "returns": "Structured diff with added/removed/changed sections"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "reason": "Voice service for real-time scan narration, executive briefings, and regulation change alerts",
+    "description": "Python module that integrates ElevenLabs API for text-to-speech generation. Provides real-time scan narration during compliance checks, generates 2-3 minute executive briefings summarizing compliance status and violations, broadcasts regulation change alerts, and supports conversational AI for voice queries. Uses professional voice (Rachel) with low-latency Turbo v2.5 model. Handles audio streaming and file generation.",
+    "dependencies": [],
+    "priority": 5,
+    "filename": "voice_service_Python.prompt",
+    "filepath": "src/voice_service.py",
+    "tags": [
+      "core",
+      "voice",
+      "elevenlabs"
+    ],
+    "context_urls": [
+      {
+        "url": "https://elevenlabs.io/docs/api-reference/text-to-speech/convert",
+        "purpose": "ElevenLabs text-to-speech API documentation"
+      },
+      {
+        "url": "https://github.com/elevenlabs/elevenlabs-python",
+        "purpose": "ElevenLabs Python SDK for voice generation"
+      }
+    ],
+    "interface": {
+      "type": "module",
+      "module": {
+        "functions": [
+          {
+            "name": "narrate_scan",
+            "signature": "def narrate_scan(message: str, stream: bool = False) -> Optional[bytes]",
+            "returns": "Audio bytes if not streaming, None if streaming"
+          },
+          {
+            "name": "generate_executive_briefing",
+            "signature": "def generate_executive_briefing(scan_results: Dict) -> bytes",
+            "returns": "Audio file bytes for 2-3 minute briefing"
+          },
+          {
+            "name": "alert_regulation_change",
+            "signature": "def alert_regulation_change(regulation_id: str, summary: str) -> bytes",
+            "returns": "Audio alert message"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "reason": "Patient data validator for CSV-based compliance checking against HIPAA data handling requirements",
+    "description": "Python module that validates patient records against HIPAA requirements using pandas for CSV processing and schema validation. Checks consent form completeness, encryption of PHI (SSN, medical records), access log presence, and data retention compliance. Supports chunked processing for large datasets (50,000+ records). Returns list of non-compliant records with specific violations and patient IDs. Uses Pandera/PandasSchema for data validation.",
+    "dependencies": [],
+    "priority": 6,
+    "filename": "patient_data_validator_Python.prompt",
+    "filepath": "src/validators/patient_data_validator.py",
+    "tags": [
+      "validator",
+      "data",
+      "hipaa"
+    ],
+    "context_urls": [
+      {
+        "url": "https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html",
+        "purpose": "Pandas CSV reading with chunking support"
+      },
+      {
+        "url": "https://pandera.readthedocs.io/en/stable/dataframe_schemas.html",
+        "purpose": "Pandera schema validation for patient data"
+      }
+    ],
+    "interface": {
+      "type": "module",
+      "module": {
+        "functions": [
+          {
+            "name": "validate_patient_records",
+            "signature": "def validate_patient_records(csv_path: str) -> Dict[str, Any]",
+            "returns": "Dict with total_records, compliant_count, violations list"
+          },
+          {
+            "name": "check_consent_completeness",
+            "signature": "def check_consent_completeness(df: pd.DataFrame) -> List[Dict]",
+            "returns": "List of consent violations with patient IDs"
+          },
+          {
+            "name": "check_phi_encryption",
+            "signature": "def check_phi_encryption(df: pd.DataFrame) -> List[Dict]",
+            "returns": "List of unencrypted PHI violations"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "reason": "Scraper agent for continuous monitoring of regulatory sources and detecting new publications",
+    "description": "Python module using Toolhouse web_search to monitor HHS.gov, FDA.gov, and Federal Register for new regulatory publications. Detects regulation updates, extracts regulation text, and triggers analysis pipeline. Uses requests and BeautifulSoup for web scraping with safe parsing. Implements polling schedule and caching to avoid duplicate processing. Returns structured regulation data with source URL, publication date, and extracted text.",
+    "dependencies": [
+      "change_tracker_Python.prompt"
+    ],
+    "priority": 7,
+    "filename": "scraper_agent_Python.prompt",
+    "filepath": "src/agents/scraper_agent.py",
+    "tags": [
+      "agent",
+      "scraper",
+      "toolhouse"
+    ],
+    "context_urls": [
+      {
+        "url": "https://docs.python-requests.org/en/latest/",
+        "purpose": "Requests library for HTTP operations"
+      },
+      {
+        "url": "https://www.crummy.com/software/BeautifulSoup/bs4/doc/",
+        "purpose": "BeautifulSoup for HTML parsing"
+      }
+    ],
+    "interface": {
+      "type": "module",
+      "module": {
+        "functions": [
+          {
+            "name": "monitor_regulatory_sources",
+            "signature": "def monitor_regulatory_sources() -> List[Dict[str, Any]]",
+            "returns": "List of new regulation publications detected"
+          },
+          {
+            "name": "extract_regulation_text",
+            "signature": "def extract_regulation_text(url: str) -> str",
+            "returns": "Extracted regulation text"
+          },
+          {
+            "name": "detect_changes",
+            "signature": "def detect_changes(regulation_id: str, current_text: str) -> Optional[Dict]",
+            "returns": "Change detection result or None if no change"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "reason": "Analysis agent for comparing regulation versions and determining substantive changes",
+    "description": "Python module using Toolhouse RAG and LLM to perform semantic diff between old and new regulation text. Identifies substantive changes versus clarifications, determines severity (critical/high/medium), and maps changes to affected compliance checkers. Uses natural language processing to understand regulatory intent and impact. Returns structured analysis with change classification and affected modules.",
+    "dependencies": [
+      "change_tracker_Python.prompt"
+    ],
+    "priority": 8,
+    "filename": "analysis_agent_Python.prompt",
+    "filepath": "src/agents/analysis_agent.py",
+    "tags": [
+      "agent",
+      "analysis",
+      "toolhouse"
+    ],
+    "context_urls": [
+      {
+        "url": "https://docs.python.org/3/library/difflib.html",
+        "purpose": "Difflib for text comparison baseline"
+      }
+    ],
+    "interface": {
+      "type": "module",
+      "module": {
+        "functions": [
+          {
+            "name": "analyze_regulation_change",
+            "signature": "def analyze_regulation_change(regulation_id: str, old_text: str, new_text: str) -> Dict[str, Any]",
+            "returns": "Analysis result with severity, change type, and affected checkers"
+          },
+          {
+            "name": "determine_severity",
+            "signature": "def determine_severity(change_analysis: Dict) -> str",
+            "returns": "Severity level: critical, high, or medium"
+          },
+          {
+            "name": "map_to_checkers",
+            "signature": "def map_to_checkers(regulation_id: str, change_type: str) -> List[str]",
+            "returns": "List of affected checker module names"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "reason": "Impact agent for running compliance checkers on customer codebases and estimating remediation effort",
+    "description": "Python module using Toolhouse code_execution to run affected compliance checkers on all customer codebases. Identifies which customers are now non-compliant after regulation changes, estimates remediation effort, and prioritizes by risk and fine exposure. Supports parallel execution across multiple codebases. Returns impact report with customer list, violation counts, and priority rankings.",
+    "dependencies": [
+      "hipaa_encryption_checker_Python.prompt",
+      "hipaa_access_control_checker_Python.prompt",
+      "hipaa_audit_logging_checker_Python.prompt",
+      "change_tracker_Python.prompt"
+    ],
+    "priority": 9,
+    "filename": "impact_agent_Python.prompt",
+    "filepath": "src/agents/impact_agent.py",
+    "tags": [
+      "agent",
+      "impact",
+      "toolhouse"
+    ],
+    "context_urls": [
+      {
+        "url": "https://docs.python.org/3/library/subprocess.html",
+        "purpose": "Subprocess management for running checkers"
+      },
+      {
+        "url": "https://www.codiga.io/blog/python-subprocess-security/",
+        "purpose": "Subprocess security best practices"
+      }
+    ],
+    "interface": {
+      "type": "module",
+      "module": {
+        "functions": [
+          {
+            "name": "assess_customer_impact",
+            "signature": "def assess_customer_impact(affected_checkers: List[str], customer_codebases: List[str]) -> Dict[str, Any]",
+            "returns": "Impact report with customer violations and priorities"
+          },
+          {
+            "name": "run_checker",
+            "signature": "def run_checker(checker_name: str, codebase_path: str) -> Dict",
+            "returns": "Checker results for single codebase"
+          },
+          {
+            "name": "estimate_remediation_effort",
+            "signature": "def estimate_remediation_effort(violations: List[Dict]) -> int",
+            "returns": "Estimated hours for remediation"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "reason": "Remediation agent for updating prompts and regenerating compliance checkers via PDD",
+    "description": "Python module that updates prompt files with new regulatory requirements, regenerates compliance checkers using pdd sync via GitHub Issues API, generates code patches for customer codebases, and creates Pull Requests with fixes. Implements permission modes (auto-apply, request-approval, notify-only). Uses PyGithub for GitHub API operations. Handles safe YAML configuration and secure subprocess execution.",
+    "dependencies": [
+      "change_tracker_Python.prompt",
+      "voice_service_Python.prompt"
+    ],
+    "priority": 10,
+    "filename": "remediation_agent_Python.prompt",
+    "filepath": "src/agents/remediation_agent.py",
+    "tags": [
+      "agent",
+      "remediation",
+      "pdd",
+      "github"
+    ],
+    "context_urls": [
+      {
+        "url": "https://pygithub.readthedocs.io/en/latest/examples/PullRequest.html",
+        "purpose": "PyGithub for creating pull requests"
+      },
+      {
+        "url": "https://security.openstack.org/guidelines/dg_avoid-dangerous-input-parsing-libraries.html",
+        "purpose": "YAML security guidelines for safe configuration loading"
+      }
+    ],
+    "interface": {
+      "type": "module",
+      "module": {
+        "functions": [
+          {
+            "name": "update_prompt_file",
+            "signature": "def update_prompt_file(checker_name: str, new_requirements: str) -> str",
+            "returns": "Updated prompt file path"
+          },
+          {
+            "name": "trigger_pdd_sync",
+            "signature": "def trigger_pdd_sync(module_name: str) -> str",
+            "returns": "GitHub Issue URL for PDD sync"
+          },
+          {
+            "name": "create_remediation_pr",
+            "signature": "def create_remediation_pr(customer_repo: str, fixes: List[Dict], permission_mode: str) -> Optional[str]",
+            "returns": "PR URL or None if auto-applied"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "reason": "Orchestrator for coordinating multi-agent workflow, managing permissions, and triggering PDD regeneration",
+    "description": "Python module that coordinates the 4-agent pipeline (scraper \u2192 analysis \u2192 impact \u2192 remediation). Manages permission modes (auto-apply, request-approval, notify-only) and enforces safety guardrails (never auto-apply security patches, require approval for breaking changes). Triggers pdd sync via GitHub Issues, creates pull requests, and logs all changes. Implements event-driven architecture with agent coordination and error handling.",
+    "dependencies": [
+      "scraper_agent_Python.prompt",
+      "analysis_agent_Python.prompt",
+      "impact_agent_Python.prompt",
+      "remediation_agent_Python.prompt",
+      "change_tracker_Python.prompt",
+      "voice_service_Python.prompt"
+    ],
+    "priority": 11,
+    "filename": "orchestrator_Python.prompt",
+    "filepath": "src/orchestrator.py",
+    "tags": [
+      "core",
+      "orchestration",
+      "coordination"
+    ],
+    "context_urls": [
+      {
+        "url": "https://docs.python.org/3/library/asyncio.html",
+        "purpose": "Asyncio for concurrent agent coordination"
+      }
+    ],
+    "interface": {
+      "type": "module",
+      "module": {
+        "functions": [
+          {
+            "name": "run_monitoring_cycle",
+            "signature": "def run_monitoring_cycle() -> Dict[str, Any]",
+            "returns": "Cycle results with changes detected and actions taken"
+          },
+          {
+            "name": "coordinate_agents",
+            "signature": "def coordinate_agents(regulation_change: Dict) -> Dict",
+            "returns": "End-to-end workflow result"
+          },
+          {
+            "name": "check_permission_mode",
+            "signature": "def check_permission_mode(change_type: str, severity: str) -> str",
+            "returns": "Permission decision: auto-apply, request-approval, or notify-only"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "reason": "Flask web dashboard providing UI for code/data compliance scanning and results visualization",
+    "description": "Python Flask application with Blueprints architecture providing web interface for RegWatch. Implements two main tabs: Code Compliance (codebase upload, real-time scan with voice narration, violation display) and Data Compliance (CSV upload, patient record validation, remediation reports). Includes API endpoints for /api/scan (POST), /api/validate-records (POST), /api/simulate-regulation-change (POST), /api/change-history (GET), and /api/voice-briefing (POST). Uses Jinja2 templating for dynamic content and supports file uploads with progress tracking.",
+    "dependencies": [
+      "hipaa_encryption_checker_Python.prompt",
+      "hipaa_access_control_checker_Python.prompt",
+      "hipaa_audit_logging_checker_Python.prompt",
+      "patient_data_validator_Python.prompt",
+      "orchestrator_Python.prompt",
+      "change_tracker_Python.prompt",
+      "voice_service_Python.prompt"
+    ],
+    "priority": 12,
+    "filename": "web_dashboard_Python.prompt",
+    "filepath": "web/app.py",
+    "tags": [
+      "web",
+      "flask",
+      "dashboard"
+    ],
+    "context_urls": [
+      {
+        "url": "https://flask.palletsprojects.com/en/stable/patterns/fileuploads/",
+        "purpose": "Flask file upload patterns for codebase and CSV uploads"
+      },
+      {
+        "url": "https://blog.miguelgrinberg.com/post/handling-file-uploads-with-flask",
+        "purpose": "Advanced Flask file upload handling with progress"
+      }
+    ],
+    "interface": {
+      "type": "api",
+      "api": {
+        "endpoints": [
+          {
+            "method": "POST",
+            "path": "/api/scan",
+            "auth": "none",
+            "requestSchema": "multipart/form-data (codebase ZIP)",
+            "responseSchema": "{ violations: [], score: int, fine_exposure: str }"
+          },
+          {
+            "method": "POST",
+            "path": "/api/validate-records",
+            "auth": "none",
+            "requestSchema": "multipart/form-data (CSV)",
+            "responseSchema": "{ total_records: int, violations: [] }"
+          },
+          {
+            "method": "POST",
+            "path": "/api/simulate-regulation-change",
+            "auth": "none",
+            "requestSchema": "{ regulation_id: str, new_text: str }",
+            "responseSchema": "{ impact: {}, affected_customers: [] }"
+          },
+          {
+            "method": "GET",
+            "path": "/api/change-history",
+            "auth": "none",
+            "responseSchema": "{ changes: [] }"
+          },
+          {
+            "method": "POST",
+            "path": "/api/voice-briefing",
+            "auth": "none",
+            "requestSchema": "{ scan_results: {} }",
+            "responseSchema": "audio/mpeg"
+          }
+        ]
+      }
+    }
+  }
+]

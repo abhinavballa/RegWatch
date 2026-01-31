@@ -1,0 +1,60 @@
+You are implementing the HIPAA access control compliance checker module for RegWatch. This module uses Python AST parsing to analyze source code for HIPAA § 164.312(a)(1) access control violations. It validates unique user IDs, role-based access control (RBAC), authentication on all endpoints, session management (15-min timeout), and multi-factor authentication for remote access. The module returns violation reports with line numbers and remediation guidance.
+
+Requirements
+
+1. Implement check_access_control_compliance(codebase_path: str) -> Dict[str, Any] that scans a codebase and returns violations list, compliance score, and recommendations
+2. Implement validate_authentication(ast_tree: ast.AST) -> List[Violation] to detect endpoints missing authentication decorators or middleware
+3. Implement validate_rbac(ast_tree: ast.AST) -> List[Violation] to ensure role-based access control is implemented
+4. Check for unique user identification mechanisms (user IDs, usernames) in authentication systems
+5. Validate session timeout configuration (must be ≤ 15 minutes for HIPAA compliance)
+6. Detect multi-factor authentication (MFA) for remote access endpoints
+7. Each violation must include: file path, line number, HIPAA regulation reference (§ 164.312(a)(1)), severity, description, remediation
+8. Implement test accumulation pattern: tests are never deleted, only added
+9. Handle framework-specific patterns: Flask (@login_required), Django (LoginRequiredMixin), FastAPI (Depends(get_current_user))
+10. Return actionable compliance report with specific code fixes
+
+Dependencies
+
+<python_ast_module_for_parsing_authentication_code>
+  <web>https://docs.python.org/3/library/ast.html</web>
+</python_ast_module_for_parsing_authentication_code>
+
+<ast_guide_for_detecting_missing_authentication_decorators>
+  <web>https://greentreesnakes.readthedocs.io/en/latest/</web>
+</ast_guide_for_detecting_missing_authentication_decorators>
+
+Instructions
+
+- Create a Violation dataclass with fields: file_path, line_number, regulation, severity, description, remediation
+- Implement AST visitor to detect route definitions (Flask: @app.route, Django: path(), FastAPI: @app.get)
+- For each route, check if authentication decorator/dependency is present
+- Detect RBAC patterns: role checks in decorators, permission classes, authorization middleware
+- Parse configuration files to validate session timeout settings (SESSION_COOKIE_AGE, PERMANENT_SESSION_LIFETIME)
+- Flag session timeout > 900 seconds (15 minutes) as violations
+- Detect MFA implementation: TOTP libraries (pyotp), SMS verification, authentication apps
+- Check for unique user ID patterns in User models (unique=True on username/email fields)
+- Implement scoring: 100 points minus deductions (critical: -25, high: -10, medium: -5)
+- Create comprehensive pytest test suite with sample Flask/Django/FastAPI apps
+- Test cases: authenticated endpoints, missing auth, weak session timeout, no RBAC, no MFA, duplicate usernames
+- Tests accumulate over time: never delete tests, only add new ones
+
+Deliverable
+
+- Python module at src/checkers/hipaa_access_control_checker.py
+- Violation dataclass definition
+- Three main functions: check_access_control_compliance, validate_authentication, validate_rbac
+- AST visitors for route and authentication detection
+- Configuration parser for session timeout validation
+- Framework-specific pattern recognition (Flask, Django, FastAPI)
+- Scoring and recommendation engine
+- Test suite in tests/test_hipaa_access_control_checker.py with accumulating tests
+- Docstrings with usage examples
+
+Implementation assumptions
+
+- Common Python web frameworks: Flask, Django, FastAPI
+- Standard auth libraries: Flask-Login, Django auth, FastAPI dependencies, PyJWT
+- Session backends: Redis, database sessions, file-based sessions
+- MFA libraries: pyotp, django-otp, twilio (for SMS)
+
+Please produce production-ready code that implements the HIPAA access control compliance checker.

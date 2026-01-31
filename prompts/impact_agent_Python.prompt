@@ -1,0 +1,90 @@
+You are implementing the impact agent for RegWatch. This module uses Toolhouse code_execution to run affected compliance checkers on all customer codebases. It identifies which customers are now non-compliant after regulation changes, estimates remediation effort, and prioritizes by risk and fine exposure. The module supports parallel execution across multiple codebases and returns an impact report with customer list, violation counts, and priority rankings.
+
+Requirements
+
+1. Implement assess_customer_impact(affected_checkers: List[str], customer_codebases: List[str]) -> Dict[str, Any] that returns impact report
+2. Implement run_checker(checker_name: str, codebase_path: str) -> Dict that executes a single checker on a codebase
+3. Implement estimate_remediation_effort(violations: List[Dict]) -> int that returns estimated hours
+4. Run compliance checkers in parallel using concurrent.futures.ThreadPoolExecutor or ProcessPoolExecutor
+5. For each customer codebase, run all affected checkers and aggregate results
+6. Calculate impact score: violation_count × severity_weight (critical=10, high=5, medium=2)
+7. Estimate remediation effort: critical=8 hours, high=4 hours, medium=2 hours per violation
+8. Calculate fine exposure: sum of HIPAA fines per violation (critical=$50k, high=$25k, medium=$10k)
+9. Prioritize customers: sort by impact_score descending
+10. Return report: {total_customers, non_compliant_count, customers: [{name, codebase_path, violations, impact_score, remediation_hours, fine_exposure}]}
+
+Dependencies
+
+<hipaa_encryption_checker>
+  <include>src/checkers/hipaa_encryption_checker.py</include>
+</hipaa_encryption_checker>
+
+<hipaa_access_control_checker>
+  <include>src/checkers/hipaa_access_control_checker.py</include>
+</hipaa_access_control_checker>
+
+<hipaa_audit_logging_checker>
+  <include>src/checkers/hipaa_audit_logging_checker.py</include>
+</hipaa_audit_logging_checker>
+
+<change_tracker>
+  <include>src/change_tracker.py</include>
+</change_tracker>
+
+<subprocess_management_for_running_checkers>
+  <web>https://docs.python.org/3/library/subprocess.html</web>
+</subprocess_management_for_running_checkers>
+
+<subprocess_security_best_practices>
+  <web>https://www.codiga.io/blog/python-subprocess-security/</web>
+</subprocess_security_best_practices>
+
+Prompt Dependencies
+
+This module depends on: hipaa_encryption_checker_Python.prompt, hipaa_access_control_checker_Python.prompt, hipaa_audit_logging_checker_Python.prompt, change_tracker_Python.prompt
+
+Instructions
+
+- Import checker modules dynamically: importlib.import_module(f'checkers.{checker_name}')
+- Call checker's main function: checker.check_*_compliance(codebase_path)
+- Use concurrent.futures.ThreadPoolExecutor with max_workers=4 for parallel execution
+- For each customer, create tasks: [(customer, checker) for customer in codebases for checker in affected_checkers]
+- Submit tasks to executor: futures = [executor.submit(run_checker, checker, codebase) for ...]
+- Collect results: violations = [future.result() for future in concurrent.futures.as_completed(futures)]
+- Aggregate violations by customer: group by codebase_path
+- Calculate impact_score per customer: sum(severity_weight[v['severity']] for v in violations)
+- Estimate remediation: sum(effort_hours[v['severity']] for v in violations)
+- Calculate fine exposure: sum(fine_amount[v['severity']] for v in violations)
+- Sort customers by impact_score descending for prioritization
+- Handle checker errors: wrap run_checker in try/except, log errors, continue with other checks
+- Implement timeout for long-running checkers: use concurrent.futures timeout parameter (default 5 minutes)
+- Create progress tracking: log completion of each customer check
+- Return detailed report with per-customer breakdown and summary statistics
+- Create pytest test suite with sample codebases
+- Test cases: single customer, multiple customers, parallel execution, checker errors, remediation estimation
+- Use pytest fixtures for temporary codebase directories
+
+Deliverable
+
+- Python module at src/agents/impact_agent.py
+- Three main functions: assess_customer_impact, run_checker, estimate_remediation_effort
+- Dynamic checker import logic
+- Parallel execution with ThreadPoolExecutor
+- Impact scoring and prioritization
+- Remediation effort estimation
+- Fine exposure calculation
+- Error handling and timeouts
+- Test suite in tests/test_impact_agent.py
+- Sample customer codebases for testing
+- Configuration for severity weights and effort estimates
+- Docstrings with impact report examples
+
+Implementation assumptions
+
+- Checkers are importable modules in src/checkers/
+- Checker functions return standard violation format
+- Customer codebases are local directories
+- Parallel execution safe (no shared state between checks)
+- Severity levels: critical, high, medium
+
+Please produce production-ready code that implements the impact agent.

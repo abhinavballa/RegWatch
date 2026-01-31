@@ -1,0 +1,85 @@
+You are implementing the remediation agent for RegWatch. This module updates prompt files with new regulatory requirements, regenerates compliance checkers using pdd sync via GitHub Issues API, generates code patches for customer codebases, and creates Pull Requests with fixes. It implements permission modes (auto-apply, request-approval, notify-only) and uses PyGithub for GitHub API operations with safe YAML configuration and secure subprocess execution.
+
+Requirements
+
+1. Implement update_prompt_file(checker_name: str, new_requirements: str) -> str that updates prompt and returns file path
+2. Implement trigger_pdd_sync(module_name: str) -> str that creates GitHub Issue for pdd sync and returns Issue URL
+3. Implement create_remediation_pr(customer_repo: str, fixes: List[Dict], permission_mode: str) -> Optional[str] that creates PR or applies fixes
+4. Support three permission modes: auto-apply (direct commit), request-approval (create PR), notify-only (create Issue)
+5. Update prompt files: read prompts/{checker_name}_Python.prompt, append new requirements to Requirements section
+6. Trigger pdd sync: create GitHub Issue with title "PDD Sync: {module_name}", body includes prompt changes
+7. Generate code patches: use checker violations to create specific code fixes (e.g., add encryption, add logging)
+8. Create Pull Requests: use PyGithub to create PR with branch, commits, description
+9. Implement safety guardrails: never auto-apply security patches, require approval for breaking changes
+10. Use subprocess for pdd sync command: subprocess.run(['pdd', 'sync', module_name], capture_output=True)
+
+Dependencies
+
+<change_tracker>
+  <include>src/change_tracker.py</include>
+</change_tracker>
+
+<voice_service>
+  <include>src/voice_service.py</include>
+</voice_service>
+
+<pygithub_for_creating_pull_requests>
+  <web>https://pygithub.readthedocs.io/en/latest/examples/PullRequest.html</web>
+</pygithub_for_creating_pull_requests>
+
+<yaml_security_guidelines_for_safe_configuration_loading>
+  <web>https://security.openstack.org/guidelines/dg_avoid-dangerous-input-parsing-libraries.html</web>
+</yaml_security_guidelines_for_safe_configuration_loading>
+
+Prompt Dependencies
+
+This module depends on: change_tracker_Python.prompt, voice_service_Python.prompt
+
+Instructions
+
+- Use PyGithub: from github import Github; gh = Github(os.getenv('GITHUB_TOKEN'))
+- Implement update_prompt_file: read prompt file, find "Requirements" section, append new requirements as numbered items
+- Preserve existing requirements (test accumulation pattern)
+- Save updated prompt file atomically
+- Use change_tracker.log_regulation_change() to record prompt modifications
+- Implement trigger_pdd_sync: create GitHub Issue with labels ['pdd-sync', 'automated']
+- Issue body format: "Regulation {regulation_id} updated. Prompt file: {prompt_path}. Changes: {summary}"
+- Alternative: run pdd sync via subprocess with security checks (no shell injection)
+- Use subprocess.run() with list arguments (not string), set timeout=300 seconds
+- Generate code patches: parse violation descriptions to create fixes
+- Example: "Missing encryption" → add field encryption declaration
+- Use AST manipulation (ast.unparse) to generate valid Python code
+- Implement permission mode logic:
+  - auto-apply: commit directly to main branch (only for low-risk changes)
+  - request-approval: create PR with detailed description, request reviews
+  - notify-only: create Issue, do not modify code
+- Safety guardrails: if change_type in ['security', 'authentication', 'encryption'], force request-approval mode
+- Create PR: gh.get_repo(customer_repo).create_pull(title, body, head=branch, base='main')
+- Use voice_service.alert_regulation_change() to notify about PR creation
+- Handle GitHub API errors: rate limiting, authentication, repository access
+- Create pytest test suite with mocked GitHub API
+- Test cases: update prompt, trigger sync, create PR, permission modes, safety guardrails, API errors
+- Use pytest-mock for GitHub and subprocess mocking
+
+Deliverable
+
+- Python module at src/agents/remediation_agent.py
+- Three main functions: update_prompt_file, trigger_pdd_sync, create_remediation_pr
+- PyGithub integration for Issues and PRs
+- Subprocess integration for pdd sync (with security)
+- Code patch generation logic
+- Permission mode implementation
+- Safety guardrail checks
+- Test suite in tests/test_remediation_agent.py
+- Configuration for GitHub token and permission modes
+- Docstrings with PR examples
+
+Implementation assumptions
+
+- GITHUB_TOKEN environment variable set
+- pdd CLI installed and in PATH
+- Prompt files in prompts/ directory
+- Customer repositories accessible via GitHub API
+- Permission modes configurable per customer
+
+Please produce production-ready code that implements the remediation agent.

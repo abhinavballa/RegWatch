@@ -1,0 +1,110 @@
+You are implementing the Flask web dashboard for RegWatch. This Flask application provides a web interface with two main tabs: Code Compliance (codebase upload, real-time scan with voice narration, violation display) and Data Compliance (CSV upload, patient record validation, remediation reports). The dashboard includes API endpoints for scanning, validation, regulation change simulation, change history, and voice briefings. It uses Jinja2 templating for dynamic content and supports file uploads with progress tracking.
+
+Requirements
+
+1. Implement Flask application with Blueprints architecture at web/app.py
+2. Create two main routes: / (Code Compliance tab), /data (Data Compliance tab)
+3. Implement POST /api/scan endpoint: accepts codebase ZIP, runs checkers, returns violations with score and fine exposure
+4. Implement POST /api/validate-records endpoint: accepts CSV, validates patient records, returns violations
+5. Implement POST /api/simulate-regulation-change endpoint: simulates regulation update, returns impact report
+6. Implement GET /api/change-history endpoint: returns regulation change log from change_tracker
+7. Implement POST /api/voice-briefing endpoint: generates audio briefing, returns MP3 file
+8. Support file uploads: codebase ZIP (max 100MB), patient CSV (max 50MB)
+9. Implement real-time scan narration: stream voice audio during compliance checks
+10. Use Jinja2 templates for rendering HTML with violation tables, compliance scores, charts
+
+Dependencies
+
+<hipaa_encryption_checker>
+  <include>src/checkers/hipaa_encryption_checker.py</include>
+</hipaa_encryption_checker>
+
+<hipaa_access_control_checker>
+  <include>src/checkers/hipaa_access_control_checker.py</include>
+</hipaa_access_control_checker>
+
+<hipaa_audit_logging_checker>
+  <include>src/checkers/hipaa_audit_logging_checker.py</include>
+</hipaa_audit_logging_checker>
+
+<patient_data_validator>
+  <include>src/validators/patient_data_validator.py</include>
+</patient_data_validator>
+
+<orchestrator>
+  <include>src/orchestrator.py</include>
+</orchestrator>
+
+<change_tracker>
+  <include>src/change_tracker.py</include>
+</change_tracker>
+
+<voice_service>
+  <include>src/voice_service.py</include>
+</voice_service>
+
+<flask_file_upload_patterns_for_codebase_and_csv_uploads>
+  <web>https://flask.palletsprojects.com/en/stable/patterns/fileuploads/</web>
+</flask_file_upload_patterns_for_codebase_and_csv_uploads>
+
+<advanced_flask_file_upload_handling_with_progress>
+  <web>https://blog.miguelgrinberg.com/post/handling-file-uploads-with-flask</web>
+</advanced_flask_file_upload_handling_with_progress>
+
+Prompt Dependencies
+
+This module depends on: hipaa_encryption_checker_Python.prompt, hipaa_access_control_checker_Python.prompt, hipaa_audit_logging_checker_Python.prompt, patient_data_validator_Python.prompt, orchestrator_Python.prompt, change_tracker_Python.prompt, voice_service_Python.prompt
+
+Instructions
+
+- Create Flask app: app = Flask(__name__, template_folder='templates', static_folder='static')
+- Configure file uploads: app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024 (100MB)
+- Create upload folder: UPLOAD_FOLDER = 'uploads', ensure it exists
+- Implement / route: render index.html with Code Compliance tab (codebase upload form)
+- Implement /data route: render data.html with Data Compliance tab (CSV upload form)
+- Implement POST /api/scan: extract ZIP, run all checkers, aggregate results, return JSON
+- Use zipfile.ZipFile to extract uploaded codebase to temp directory
+- Run checkers: encryption_checker.check_encryption_compliance(codebase_path)
+- Aggregate violations: combine results from all three checkers
+- Calculate overall score: average of checker scores
+- Calculate fine exposure: sum of all violation fines
+- Narrate scan: voice_service.narrate_scan("Starting compliance scan...") at start
+- Implement POST /api/validate-records: save CSV, call patient_data_validator.validate_patient_records()
+- Return validation results: total_records, compliant_count, violations list
+- Implement POST /api/simulate-regulation-change: call orchestrator.coordinate_agents() with simulated change
+- Return impact report: affected customers, PR count, violations
+- Implement GET /api/change-history: call change_tracker.get_change_history(), return JSON
+- Implement POST /api/voice-briefing: call voice_service.generate_executive_briefing(), return audio file
+- Use Flask send_file to serve MP3: send_file(audio_bytes, mimetype='audio/mpeg')
+- Create Jinja2 templates: base.html (layout), index.html (code compliance), data.html (data compliance)
+- Templates include: violation tables, compliance score display, fine exposure alerts, upload forms
+- Add progress tracking: use Flask-SocketIO for real-time scan progress updates (optional)
+- Handle errors: wrap endpoints in try/except, return 400/500 with error messages
+- Implement CORS if needed: flask-cors for API access from external clients
+- Create pytest test suite with Flask test client
+- Test cases: upload codebase, scan endpoint, validate CSV, change history, voice briefing, file size limits
+- Use pytest fixtures for test client and sample files
+
+Deliverable
+
+- Flask application at web/app.py
+- API endpoints: /api/scan, /api/validate-records, /api/simulate-regulation-change, /api/change-history, /api/voice-briefing
+- Route handlers: /, /data
+- File upload handling with size limits
+- Jinja2 templates in web/templates/
+- Static files (CSS, JS) in web/static/
+- Checker integration for compliance scanning
+- Voice service integration for narration
+- Test suite in tests/test_web_dashboard.py
+- Configuration for upload limits and allowed extensions
+- Docstrings with API endpoint examples
+
+Implementation assumptions
+
+- Flask runs on localhost:5000 (configurable)
+- Upload folder created at startup
+- Temp files cleaned up after processing
+- Jinja2 templates use Bootstrap for styling (optional)
+- Real-time progress via polling or WebSockets (SocketIO)
+
+Please produce production-ready code that implements the Flask web dashboard.

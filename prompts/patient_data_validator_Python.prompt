@@ -1,0 +1,69 @@
+You are implementing the patient data validator for RegWatch. This module validates patient records against HIPAA requirements using pandas for CSV processing and schema validation. It checks consent form completeness, encryption of PHI (SSN, medical records), access log presence, and data retention compliance. The module supports chunked processing for large datasets (50,000+ records) and returns a list of non-compliant records with specific violations and patient IDs.
+
+Requirements
+
+1. Implement validate_patient_records(csv_path: str) -> Dict[str, Any] that returns total_records, compliant_count, violations list
+2. Implement check_consent_completeness(df: pd.DataFrame) -> List[Dict] to detect missing or incomplete consent forms
+3. Implement check_phi_encryption(df: pd.DataFrame) -> List[Dict] to ensure PHI fields (SSN, medical_record_number) are encrypted
+4. Support chunked CSV reading for large files (chunk_size=10000 records)
+5. Validate required fields: patient_id, consent_date, consent_type, ssn_encrypted, medical_record_encrypted, access_log_id
+6. Check consent completeness: consent_date not null, consent_type in [general, research, treatment]
+7. Verify PHI encryption: ssn_encrypted=True, medical_record_encrypted=True
+8. Validate access logs: access_log_id not null (proves audit trail exists)
+9. Check data retention: last_access_date within retention period (configurable, default 7 years)
+10. Use Pandera or PandasSchema for schema validation
+
+Dependencies
+
+<pandas_csv_reading_with_chunking_support>
+  <web>https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html</web>
+</pandas_csv_reading_with_chunking_support>
+
+<pandera_schema_validation_for_patient_data>
+  <web>https://pandera.readthedocs.io/en/stable/dataframe_schemas.html</web>
+</pandera_schema_validation_for_patient_data>
+
+Instructions
+
+- Use pandas.read_csv() with chunksize parameter for large files
+- Define Pandera schema with required columns and data types
+- patient_id: string, required
+- consent_date: datetime, required
+- consent_type: string, must be in [general, research, treatment]
+- ssn_encrypted: boolean, required, must be True
+- medical_record_encrypted: boolean, required, must be True
+- access_log_id: string, required (foreign key to audit log)
+- last_access_date: datetime, required
+- Implement check_consent_completeness: filter rows where consent_date is null or consent_type not in valid list
+- Implement check_phi_encryption: filter rows where ssn_encrypted=False or medical_record_encrypted=False
+- For each violation, record: patient_id, violation_type, field_name, current_value, expected_value
+- Calculate compliance rate: compliant_count / total_records * 100
+- Process chunks: accumulate violations across all chunks, track total record count
+- Handle schema validation errors: catch Pandera errors, report schema mismatches
+- Implement data retention check: compare last_access_date with retention cutoff (today - 7 years)
+- Return summary: {total_records, compliant_count, compliance_rate, violations: [{patient_id, violation_type, details}]}
+- Create pytest test suite with sample CSV files
+- Test cases: valid records, missing consent, unencrypted PHI, missing access logs, schema errors, large files (chunking)
+- Use pytest fixtures for temporary CSV files
+
+Deliverable
+
+- Python module at src/validators/patient_data_validator.py
+- Three main functions: validate_patient_records, check_consent_completeness, check_phi_encryption
+- Pandera schema definition
+- Chunked CSV processing logic
+- Data retention validation
+- Violation collection and reporting
+- Test suite in tests/test_patient_data_validator.py
+- Sample CSV files for testing
+- Docstrings with schema and usage examples
+
+Implementation assumptions
+
+- CSV format with headers
+- Standard PHI fields: SSN, medical record number
+- Boolean flags for encryption status (True/False)
+- ISO 8601 date format for timestamps
+- Retention period: 7 years (2557 days) configurable
+
+Please produce production-ready code that implements the patient data validator.

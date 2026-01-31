@@ -1,0 +1,66 @@
+You are implementing the voice service for RegWatch. This module integrates ElevenLabs API for text-to-speech generation. It provides real-time scan narration during compliance checks, generates 2-3 minute executive briefings summarizing compliance status and violations, broadcasts regulation change alerts, and supports conversational AI for voice queries. The service uses professional voice (Rachel) with low-latency Turbo v2.5 model.
+
+Requirements
+
+1. Implement narrate_scan(message: str, stream: bool = False) -> Optional[bytes] for real-time scan narration
+2. Implement generate_executive_briefing(scan_results: Dict) -> bytes that creates a 2-3 minute audio summary
+3. Implement alert_regulation_change(regulation_id: str, summary: str) -> bytes for regulation change alerts
+4. Integrate ElevenLabs API with voice_id for Rachel, model Turbo v2.5
+5. Support streaming audio for real-time narration (return None when streaming, yield chunks)
+6. Support non-streaming audio file generation (return bytes for download)
+7. Format executive briefings: opening, compliance score, violation summary by category, top risks, closing recommendations
+8. Handle API errors gracefully: rate limiting, network errors, invalid API keys
+9. Cache frequently used audio (e.g., standard phrases) to reduce API calls
+10. Provide configuration for voice settings: stability, similarity_boost, speaking rate
+
+Dependencies
+
+<elevenlabs_text_to_speech_api_documentation>
+  <web>https://elevenlabs.io/docs/api-reference/text-to-speech/convert</web>
+</elevenlabs_text_to_speech_api_documentation>
+
+<elevenlabs_python_sdk_for_voice_generation>
+  <web>https://github.com/elevenlabs/elevenlabs-python</web>
+</elevenlabs_python_sdk_for_voice_generation>
+
+Instructions
+
+- Install elevenlabs Python SDK: pip install elevenlabs
+- Use environment variable ELEVENLABS_API_KEY for authentication
+- Configure voice_id for Rachel (find ID from ElevenLabs voice library)
+- Use model_id "eleven_turbo_v2_5" for low-latency generation
+- Implement narrate_scan with streaming support: if stream=True, use generate() method and yield audio chunks
+- For non-streaming, use generate() and return complete audio bytes
+- Format executive briefing text: "Executive Compliance Briefing. Overall score: {score} out of 100. {violation_count} violations detected. Critical issues: {critical_list}. Recommendations: {recommendations}."
+- Limit briefing to ~450 words for 2-3 minute duration at normal speaking rate
+- Implement caching with TTL (time-to-live): cache standard phrases like "Starting scan...", "Scan complete."
+- Use requests library for direct API calls if SDK doesn't support required features
+- Handle API errors: wrap API calls in try/except, implement exponential backoff for rate limiting
+- Implement retry logic: 3 retries with exponential backoff (1s, 2s, 4s)
+- Voice settings: stability=0.5, similarity_boost=0.75 for balanced, clear speech
+- Create pytest test suite with mocked ElevenLabs API responses
+- Test cases: successful narration, streaming, executive briefing, regulation alert, API errors, caching
+- Use pytest-mock for API mocking
+
+Deliverable
+
+- Python module at src/voice_service.py
+- Three main functions: narrate_scan, generate_executive_briefing, alert_regulation_change
+- ElevenLabs API client initialization
+- Audio streaming implementation
+- Executive briefing text formatter
+- Caching mechanism with TTL
+- Error handling and retry logic
+- Test suite in tests/test_voice_service.py with mocked API
+- Configuration for voice settings (stability, similarity_boost)
+- Docstrings with usage examples
+
+Implementation assumptions
+
+- ElevenLabs API key available in environment variable
+- Rachel voice ID available (or fallback to default voice)
+- Internet connectivity for API calls
+- Audio format: MP3 (default for ElevenLabs)
+- Briefings assume 150 words/minute speaking rate
+
+Please produce production-ready code that implements the voice service.

@@ -1,0 +1,75 @@
+You are implementing the analysis agent for RegWatch. This module uses Toolhouse RAG and LLM to perform semantic diff between old and new regulation text. It identifies substantive changes versus clarifications, determines severity (critical/high/medium), and maps changes to affected compliance checkers. The module uses natural language processing to understand regulatory intent and impact, returning structured analysis with change classification and affected modules.
+
+Requirements
+
+1. Implement analyze_regulation_change(regulation_id, old_text, new_text) -> Dict[str, Any] that returns analysis with severity, change_type, affected_checkers
+2. Implement determine_severity(change_analysis: Dict) -> str that classifies severity as critical, high, or medium
+3. Implement map_to_checkers(regulation_id, change_type) -> List[str] that identifies affected compliance checker modules
+4. Use difflib for baseline text comparison, then apply LLM for semantic analysis
+5. Classify change types: substantive (new requirement), clarification (wording change), expansion (broader scope), restriction (narrower scope)
+6. Severity criteria: critical (new security requirement, stricter encryption), high (new logging requirement, tighter controls), medium (clarification, procedural change)
+7. Map regulation sections to checkers: § 164.312(a)(2)(iv) → hipaa_encryption_checker, § 164.312(a)(1) → hipaa_access_control_checker, § 164.312(b) → hipaa_audit_logging_checker
+8. Extract key changes: added requirements, removed requirements, modified requirements
+9. Use NLP to identify key terms: "must", "shall", "required" (mandatory), "should", "may" (optional)
+10. Return structured analysis: {regulation_id, change_type, severity, summary, key_changes: [{type, description, impact}], affected_checkers: []}
+
+Dependencies
+
+<change_tracker>
+  <include>src/change_tracker.py</include>
+</change_tracker>
+
+<difflib_for_text_comparison_baseline>
+  <web>https://docs.python.org/3/library/difflib.html</web>
+</difflib_for_text_comparison_baseline>
+
+Prompt Dependencies
+
+This module depends on: change_tracker_Python.prompt
+
+Instructions
+
+- Use difflib.unified_diff() to generate line-by-line diff
+- Parse diff output to identify added (+), removed (-), modified lines
+- Implement semantic analysis: classify changes by looking for keywords
+- Keywords for substantive changes: "new requirement", "must now", "shall implement"
+- Keywords for clarifications: "clarifies", "means", "defined as"
+- Implement severity determination: check if change adds mandatory security controls
+- Critical: new encryption algorithm requirement, stricter key length, new authentication mandate
+- High: new logging requirement, session timeout reduction, additional audit fields
+- Medium: clarification of existing requirement, procedural guidance
+- Map regulation IDs to checkers using mapping table:
+  - hipaa-164-312-a-2-iv → hipaa_encryption_checker
+  - hipaa-164-312-a-1 → hipaa_access_control_checker
+  - hipaa-164-312-b → hipaa_audit_logging_checker
+- Extract key changes: use regex or NLP to find sentences with mandatory verbs
+- Implement LLM integration (optional): use OpenAI or Anthropic API to classify change intent
+- If LLM available, send prompt: "Analyze this regulation change. Old: {old_text}. New: {new_text}. Classify as substantive/clarification/expansion/restriction and determine severity."
+- Parse LLM response for change_type and severity
+- Use change_tracker.semantic_diff() for structured diff
+- Create pytest test suite with sample regulation changes
+- Test cases: substantive change, clarification, new encryption requirement, logging change, mapping to checkers
+- Mock LLM responses for consistent testing
+
+Deliverable
+
+- Python module at src/agents/analysis_agent.py
+- Three main functions: analyze_regulation_change, determine_severity, map_to_checkers
+- Regulation-to-checker mapping table
+- Keyword-based classification logic
+- LLM integration (optional, with fallback to keyword analysis)
+- Structured analysis output
+- Test suite in tests/test_analysis_agent.py
+- Sample regulation changes for testing
+- Configuration for LLM API (if used)
+- Docstrings with analysis examples
+
+Implementation assumptions
+
+- Regulation text is in English
+- Regulation IDs follow HIPAA section format (§ 164.312.x)
+- Three checkers available: encryption, access_control, audit_logging
+- LLM integration optional (graceful fallback to rule-based analysis)
+- Difflib provides sufficient baseline for change detection
+
+Please produce production-ready code that implements the analysis agent.

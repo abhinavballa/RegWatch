@@ -1,0 +1,61 @@
+You are implementing the HIPAA audit logging compliance checker module for RegWatch. This module uses Python AST parsing to analyze source code for HIPAA § 164.312(b) audit logging violations. It validates that all ePHI access is logged with timestamp, user, action, and resource. The module checks log retention (6+ years), tamper-proof storage, and automated anomaly detection.
+
+Requirements
+
+1. Implement check_audit_logging_compliance(codebase_path: str) -> Dict[str, Any] that returns violations list and compliance score
+2. Implement validate_audit_logs(ast_tree: ast.AST) -> List[Violation] to detect ePHI access without logging
+3. Implement validate_log_retention(config: Dict) -> List[Violation] to ensure 6+ year retention policy
+4. Check that all database queries involving PHI fields are logged (Patient, MedicalRecord, etc.)
+5. Validate log entries contain required fields: timestamp, user_id, action (CREATE/READ/UPDATE/DELETE), resource_type, resource_id
+6. Detect tamper-proof logging mechanisms (append-only logs, write-once storage, cryptographic signing)
+7. Check for automated anomaly detection (unusual access patterns, bulk downloads, after-hours access)
+8. Each violation must include: file path, line number, HIPAA regulation § 164.312(b), severity, description, remediation
+9. Implement test accumulation pattern: tests never deleted, only added
+10. Return detailed compliance report with logging best practices
+
+Dependencies
+
+<python_ast_for_detecting_missing_logging_statements>
+  <web>https://docs.python.org/3/library/ast.html</web>
+</python_ast_for_detecting_missing_logging_statements>
+
+<python_audit_events_for_tamper_proof_logging>
+  <web>https://docs.python.org/3/library/audit_events.html</web>
+</python_audit_events_for_tamper_proof_logging>
+
+Instructions
+
+- Create a Violation dataclass with: file_path, line_number, regulation, severity, description, remediation
+- Implement AST visitor to detect database queries (ORM: .filter(), .get(), .create(), .update(), .delete())
+- For each query on PHI models, verify logging statement exists nearby (within same function)
+- Detect logging.info/audit_log calls with required structured fields (user, action, resource)
+- Parse configuration to validate log retention settings (LOGGING_RETENTION_DAYS >= 2190 for 6 years)
+- Check for append-only log handlers (SysLogHandler, CloudWatch Logs, immutable S3 buckets)
+- Detect cryptographic log signing (HMAC, digital signatures)
+- Flag anomaly detection systems (rate limiting, suspicious activity alerts)
+- Implement scoring: 100 points minus deductions per violation type
+- Create pytest test suite with sample Django/SQLAlchemy codebases
+- Test cases: logged queries, missing logs, incomplete log data, short retention, mutable logs, no anomaly detection
+- Tests accumulate: each new regulation scenario adds tests, never removes old ones
+
+Deliverable
+
+- Python module at src/checkers/hipaa_audit_logging_checker.py
+- Violation dataclass
+- Three main functions: check_audit_logging_compliance, validate_audit_logs, validate_log_retention
+- AST visitors for query and logging detection
+- PHI model detection (Patient, MedicalRecord, etc.)
+- Configuration parser for retention policies
+- Tamper-proof mechanism detection
+- Scoring engine
+- Test suite in tests/test_hipaa_audit_logging_checker.py
+- Docstrings with logging examples
+
+Implementation assumptions
+
+- Python ORMs: Django ORM, SQLAlchemy, Peewee
+- Logging frameworks: Python logging module, structlog, python-json-logger
+- Log storage: CloudWatch, Elasticsearch, Splunk, Syslog, immutable S3
+- Anomaly detection: rate limiting decorators, AWS GuardDuty integration, custom alert systems
+
+Please produce production-ready code that implements the HIPAA audit logging compliance checker.

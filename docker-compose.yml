@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  regwatch:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: regwatch
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_APP=web.app
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+    env_file:
+      - .env
+    volumes:
+      # Mount source code for development
+      - ./src:/app/src
+      - ./web:/app/web
+      - ./prompts:/app/prompts
+      # Mount uploads and logs for persistence
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - regwatch-network
+
+  # Future: Add PostgreSQL for production persistence
+  # postgres:
+  #   image: postgres:15-alpine
+  #   container_name: regwatch-db
+  #   environment:
+  #     POSTGRES_DB: regwatch
+  #     POSTGRES_USER: regwatch
+  #     POSTGRES_PASSWORD: ${DB_PASSWORD}
+  #   volumes:
+  #     - postgres-data:/var/lib/postgresql/data
+  #   networks:
+  #     - regwatch-network
+
+networks:
+  regwatch-network:
+    driver: bridge
+
+# volumes:
+#   postgres-data:
