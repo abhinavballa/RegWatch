@@ -1,0 +1,78 @@
+You are implementing the orchestrator module for the RegWatch compliance monitoring system. This central orchestration module coordinates scraper, analysis, impact, and remediation agents in a multi-agent workflow. It manages workflow state, triggers pdd sync via GitHub Issues API, enforces permission modes and safety guardrails, and integrates with change tracker and voice service for notifications. It implements never-auto-apply rules and approval requirements for critical changes.
+
+Requirements
+
+1. Implement run_monitoring_cycle() function that executes a complete monitoring cycle (scrape → analyze → assess → remediate)
+2. Implement handle_regulation_change(regulation_id, new_text, permission_mode) function that processes a single regulation change
+3. Implement check_permission(change_type, affected_files) function that determines the appropriate permission action
+4. Coordinate all four agents: scraper_agent, analysis_agent, impact_agent, remediation_agent
+5. Manage workflow state: track current step, handle failures, implement retry logic, log all steps
+6. Enforce permission modes: auto_apply (limited scope), request_approval (default), notify_only (read-only)
+7. Implement never-auto-apply rules: encryption changes, access control changes, changes affecting >10 files, production branch changes
+8. Integrate with change_tracker to log all regulation changes and workflow actions
+9. Integrate with voice_service to generate audio briefings and alerts for critical changes
+10. Return workflow summary with: changes_detected (int), actions_taken (list), prs_created (list), notifications_sent (list)
+
+Dependencies
+
+<change_tracker>
+  <include>src/change_tracker.py</include>
+</change_tracker>
+
+<voice_service>
+  <include>src/voice_service.py</include>
+</voice_service>
+
+<scraper_agent>
+  <include>src/agents/scraper_agent.py</include>
+</scraper_agent>
+
+<analysis_agent>
+  <include>src/agents/analysis_agent.py</include>
+</analysis_agent>
+
+<impact_agent>
+  <include>src/agents/impact_agent.py</include>
+</impact_agent>
+
+<remediation_agent>
+  <include>src/agents/remediation_agent.py</include>
+</remediation_agent>
+
+<pytest_fixtures_for_test_accumulation_strategy>
+  <web>https://docs.pytest.org/en/stable/reference/fixtures.html</web>
+</pytest_fixtures_for_test_accumulation_strategy>
+
+Instructions
+
+- For run_monitoring_cycle(): execute workflow steps in sequence: (1) scraper_agent.monitor_regulations(), (2) for each new regulation: analysis_agent.analyze_change(), (3) impact_agent.assess_impact(), (4) remediation_agent.update_prompt() and regenerate_checker(), (5) remediation_agent.create_remediation_pr()
+- Log each step to change_tracker: call change_tracker.log_change() after analysis completes
+- Handle failures: wrap each agent call in try/except, log errors, continue with next regulation if one fails
+- Implement retry logic for transient failures (network errors, API rate limits): 3 retries with exponential backoff
+- For handle_regulation_change(): orchestrate single regulation through the workflow, respect permission_mode parameter
+- Check permission_mode before remediation: call check_permission() to validate action is allowed
+- For check_permission(): implement never-auto-apply rules, return "auto_apply", "request_approval", or "notify_only"
+- Never-auto-apply rules: if change_type in ["encryption", "access_control", "authentication"] OR affected_files > 10, return "request_approval"
+- Integrate voice_service: after workflow completes, call voice_service.generate_briefing() with summary, call voice_service.alert() for critical changes
+- Manage workflow state: maintain a workflow_state dict with current_step, regulation_id, start_time, status
+- Return comprehensive summary: count regulations processed, list PRs created, list notifications sent, include any errors encountered
+
+Deliverable
+
+- A single Python module file: src/orchestrator.py
+- Module exports three functions: run_monitoring_cycle, handle_regulation_change, check_permission
+- Include helper functions for workflow state management, error handling, retry logic
+- All functions have complete type annotations
+- Include comprehensive docstrings explaining multi-agent workflow coordination and safety mechanisms
+
+Implementation assumptions (explicit)
+
+- All agent modules are available and properly configured with API keys
+- Change tracker and voice service are functional
+- Monitoring cycles run on a schedule (externally triggered, e.g., cron job)
+- Permission modes can be overridden via configuration file or environment variable
+- Never-auto-apply rules are enforced programmatically (cannot be disabled)
+- Workflow state is in-memory for single cycle (persisted separately for long-running monitoring)
+- Maximum 50 regulations processed per cycle (prioritize by publication date, most recent first)
+- Voice briefings are limited to critical and high severity changes (avoid notification overload)
+- PRs are created in customer repos (require proper GitHub permissions configured)

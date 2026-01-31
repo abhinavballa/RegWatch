@@ -1,0 +1,56 @@
+You are implementing the hipaa_audit_logging_checker module for the RegWatch compliance monitoring system. This PDD-generated compliance checker validates HIPAA § 164.312(b) audit logging requirements by analyzing Python code using AST parsing. It verifies that all ePHI access is logged with timestamp, user, action, and resource, checks log retention (6+ years), tamper-proof storage, and automated anomaly detection. This module will have approximately 25 tests covering logging scenarios.
+
+Requirements
+
+1. Implement check_audit_logging(code_path) function that analyzes Python files for HIPAA audit logging compliance
+2. Use Python's ast module to parse and analyze code without executing it
+3. Verify all ePHI access operations (create, read, update, delete) are logged
+4. Ensure log entries include required fields: timestamp, user_id, action type, resource/record ID, IP address (optional but recommended)
+5. Validate log retention configuration: check for retention policies >= 6 years (2190 days)
+6. Detect tamper-proof logging: verify use of append-only log storage, write-once storage, or cryptographic log signing
+7. Check for anomaly detection: search for log monitoring, alerting on unusual access patterns, or integration with SIEM systems
+8. Return violation report as Dict with keys: "findings" (list), "compliant" (boolean), "severity" (str), "regulation_reference" (str)
+9. Each finding must include: line_number, violation_type, description, remediation_suggestion, severity
+10. Support analyzing logging configurations for Python logging module, third-party loggers (loguru, structlog), and cloud logging services
+
+Dependencies
+
+<python_ast_module_for_static_code_analysis>
+  <web>https://docs.python.org/3/library/ast.html</web>
+</python_ast_module_for_static_code_analysis>
+
+<nist_sp_800_66r2_hipaa_security_rule_implementation_guide>
+  <web>https://csrc.nist.gov/pubs/sp/800/66/r2/final</web>
+</nist_sp_800_66r2_hipaa_security_rule_implementation_guide>
+
+Instructions
+
+- Create AST visitor classes: AuditLoggingDetector(ast.NodeVisitor) to detect logging patterns
+- Identify ePHI access: search for database queries, API calls, file access related to PHI models/tables
+- Verify logging presence: for each ePHI access operation, check if logger.info/warning/error call exists nearby (within same function)
+- Check log fields: parse logging call arguments to verify timestamp, user_id, action, and resource_id are included
+- Detect log retention: search for logging configuration with rotation policies, check for retention_days or max_age settings >= 2190 days
+- Detect tamper-proof logging: search for append-only file modes ('a'), immutable storage references (S3 WORM, Azure immutable), or log signing
+- Detect anomaly detection: search for log analysis libraries (elasticsearch, splunk SDK), alerting configurations, or SIEM integrations
+- For each violation, provide specific remediation (e.g., "Add audit log call after patient record access at line X")
+- Implement helper function _parse_log_call(node: ast.Call) -> Dict to extract fields from logging calls
+- Calculate overall severity: critical for missing audit logs on ePHI access, high for inadequate retention, medium for missing anomaly detection
+
+Deliverable
+
+- A single Python module file: src/checkers/hipaa_audit_logging_checker.py
+- Module exports one primary function: check_audit_logging
+- Include AST visitor class(es) for detecting audit logging patterns
+- Include helper functions for log call parsing, retention validation
+- All functions have complete type annotations
+- Include comprehensive docstrings explaining HIPAA § 164.312(b) requirements
+
+Implementation assumptions (explicit)
+
+- Code to analyze is valid Python 3.7+ syntax
+- Python logging module or compatible logger (loguru, structlog) is used
+- ePHI access can be identified by model/table names or function names containing PHI-related terms
+- Log retention configuration is in Python code or referenced config files
+- Tamper-proof logging is implemented via storage configuration (may be external to code)
+- 25 tests will cover: audit log presence for CRUD operations, required fields validation, retention policy detection, tamper-proof storage, anomaly detection integration
+- Anomaly detection may be external (SIEM) but should be referenced in code or configuration

@@ -1,0 +1,71 @@
+You are implementing the impact_agent module for the RegWatch compliance monitoring system. This Toolhouse-powered agent uses the code_execution tool to run affected compliance checkers on customer codebases. It identifies which customers are now non-compliant due to regulation changes, estimates remediation effort, and prioritizes customers by risk/fine exposure. It executes compliance checkers in isolated environments and aggregates results across multiple customers.
+
+Requirements
+
+1. Implement assess_impact(affected_checkers, customer_codebases) function that runs checkers on customer code
+2. Implement prioritize_customers(impact_data) function that sorts customers by risk and fine exposure
+3. Use Toolhouse SDK's code_execution tool to run compliance checkers in isolated sandboxes
+4. Execute each affected checker on each customer codebase, capture violation reports
+5. Aggregate results: count violations per customer, categorize by severity, estimate remediation effort
+6. Calculate risk score based on: number of critical violations, number of affected patients/records, historical compliance
+7. Estimate fine exposure using HIPAA penalty tiers: Tier 1 ($100-$50K), Tier 2 ($1K-$50K), Tier 3 ($10K-$50K), Tier 4 ($50K per violation)
+8. Return impact report Dict with keys: "customers_affected" (list), "total_violations" (int), "severity_breakdown" (dict), "high_risk_customers" (list)
+9. Each customer in customers_affected includes: customer_id, violations_count, severity_counts, risk_score, estimated_fine, remediation_hours
+10. Handle execution failures gracefully: log errors, mark customer as "unable_to_assess", continue with remaining customers
+
+Dependencies
+
+<change_tracker>
+  <include>src/change_tracker.py</include>
+</change_tracker>
+
+<hipaa_encryption_checker>
+  <include>src/checkers/hipaa_encryption_checker.py</include>
+</hipaa_encryption_checker>
+
+<hipaa_access_control_checker>
+  <include>src/checkers/hipaa_access_control_checker.py</include>
+</hipaa_access_control_checker>
+
+<hipaa_audit_logging_checker>
+  <include>src/checkers/hipaa_audit_logging_checker.py</include>
+</hipaa_audit_logging_checker>
+
+<toolhouse_sdk_documentation_for_code_execution_capabilities>
+  <web>https://docs.toolhouse.ai/</web>
+</toolhouse_sdk_documentation_for_code_execution_capabilities>
+
+Instructions
+
+- Import Toolhouse SDK and initialize with API key from environment variable TOOLHOUSE_API_KEY
+- Import compliance checker modules dynamically based on affected_checkers list
+- For assess_impact(): iterate through each customer codebase, run each affected checker using Toolhouse code_execution tool
+- Package checker code and customer codebase for isolated execution: create a temporary execution environment with checker imported
+- Execute checker.check_encryption(code_path) or equivalent function for each checker type
+- Capture violation report from each checker execution, parse results
+- Calculate risk score: critical_violations * 10 + high_violations * 5 + medium_violations * 2 + low_violations * 1
+- Estimate fine exposure: Tier 4 ($50K) for critical violations, Tier 3 ($10K) for high, Tier 2 ($1K) for medium
+- Estimate remediation effort: 8 hours per critical violation, 4 hours per high, 2 hours per medium, 1 hour per low
+- For prioritize_customers(): sort impact_data["customers_affected"] by risk_score descending, then by estimated_fine descending
+- Return top 20 customers as "high_risk_customers" for immediate attention
+- Handle errors: catch execution timeouts (30 sec limit), sandbox errors, invalid code paths; log and continue
+
+Deliverable
+
+- A single Python module file: src/agents/impact_agent.py
+- Module exports two functions: assess_impact, prioritize_customers
+- Include helper functions for risk calculation, fine estimation, remediation effort estimation
+- All functions have complete type annotations
+- Include comprehensive docstrings explaining Toolhouse code_execution integration and risk scoring methodology
+
+Implementation assumptions (explicit)
+
+- TOOLHOUSE_API_KEY environment variable is set and valid
+- Toolhouse code_execution tool supports Python sandboxing with file system access
+- Customer codebases are accessible as file paths or can be uploaded to Toolhouse
+- Each customer codebase is a valid Python project structure
+- Checkers can be imported and executed in sandbox environments
+- Fine exposure estimates are rough guidelines (actual fines vary by case)
+- Remediation effort assumes experienced developers working on compliant code
+- Maximum 100 customer codebases assessed per impact analysis (scale with batch processing later)
+- Risk scores are relative rankings, not absolute compliance scores

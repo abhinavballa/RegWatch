@@ -1,0 +1,56 @@
+You are implementing the patient_data_validator module for the RegWatch compliance monitoring system. This module validates patient records against HIPAA data handling requirements using Pandas and Pandera. It accepts CSV uploads, checks consent form completeness, PHI encryption status, access log presence, and data retention compliance. It returns lists of non-compliant records with specific violations and supports chunked processing for large datasets (50,000+ records).
+
+Requirements
+
+1. Implement validate_records(csv_path) function that reads a CSV file and returns a validation report
+2. Implement validate_dataframe(df) function that validates an in-memory Pandas DataFrame
+3. Use Pandera for schema-based validation to ensure data structure compliance
+4. Check consent form completeness: verify consent_signed field is True, consent_date is present and valid
+5. Check PHI encryption: verify encrypted_ssn, encrypted_medical_record fields are present and non-empty (or encryption flags are True)
+6. Check access log presence: verify last_access_date, last_access_user fields are populated
+7. Check data retention compliance: verify created_date is within retention period, check for data_retention_expires field
+8. Support chunked processing for large CSV files (50,000+ rows) using Pandas chunksize parameter
+9. Return validation report as Dict with keys: "total" (int), "compliant" (int), "non_compliant" (int), "violations" (list of dicts)
+10. Each violation dict must include: patient_id, record_number, violation_type, field_name, description, severity
+
+Dependencies
+
+<pandas_csv_reading_with_chunking_for_large_datasets>
+  <web>https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html</web>
+</pandas_csv_reading_with_chunking_for_large_datasets>
+
+<pandera_schema_based_validation_for_structured_data>
+  <web>https://pandera.readthedocs.io/en/stable/schema_models.html</web>
+</pandera_schema_based_validation_for_structured_data>
+
+Instructions
+
+- Define a Pandera SchemaModel class: PatientRecordSchema that specifies required columns, data types, and validation rules
+- Required columns: patient_id (str), consent_signed (bool), consent_date (datetime or str), encrypted_ssn (str), encrypted_medical_record (str), last_access_date (datetime or str), last_access_user (str), created_date (datetime or str)
+- For validate_records(): use pd.read_csv with chunksize=10000 for files > 50000 rows, validate each chunk, aggregate results
+- For validate_dataframe(): validate the entire DataFrame at once using the Pandera schema
+- Implement validation checks: consent_signed must be True, consent_date must be <= today, encrypted fields must be non-empty strings (length > 10)
+- Implement data retention check: created_date must be within 7 years from today (HIPAA minimum retention)
+- For each validation failure, capture the patient_id, row number, specific field, and violation type
+- Classify severity: critical for missing encryption, high for missing consent, medium for missing access logs, low for retention warnings
+- Return summary counts and detailed violation list
+- Handle missing columns gracefully: treat as critical violations, include in violations list
+
+Deliverable
+
+- A single Python module file: src/validators/patient_data_validator.py
+- Module exports two functions: validate_records, validate_dataframe
+- Include Pandera SchemaModel class: PatientRecordSchema
+- Include helper functions for date parsing, encryption validation, retention calculation
+- All functions have complete type annotations
+- Include comprehensive docstrings explaining HIPAA data handling requirements
+
+Implementation assumptions (explicit)
+
+- CSV files are UTF-8 encoded with header row
+- Encrypted fields are base64 or hex strings (non-readable format)
+- Date columns may be strings in ISO 8601 format or Excel date format
+- Large files (50,000+ rows) will be processed in chunks to avoid memory issues
+- Patient_id is always present and unique (primary key)
+- Data retention period is 7 years from created_date (can be configured)
+- Access log fields may be optional for newly created records (< 24 hours old)

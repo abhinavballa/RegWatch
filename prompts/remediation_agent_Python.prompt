@@ -1,0 +1,64 @@
+You are implementing the remediation_agent module for the RegWatch compliance monitoring system. This Toolhouse-powered agent updates prompt files with new regulation requirements, regenerates compliance checkers via pdd sync, generates code patches for customer codebases, and creates Pull Requests using PyGithub. It implements permission modes (auto-apply, request approval, notify only) and safety guardrails for secure automated remediation.
+
+Requirements
+
+1. Implement update_prompt(prompt_file, new_requirements) function that updates a PDD prompt file with new regulation requirements
+2. Implement regenerate_checker(module_name) function that triggers pdd sync to regenerate a compliance checker
+3. Implement create_remediation_pr(customer_repo, patch, permission_mode) function that creates a PR or auto-applies fixes
+4. Use Toolhouse SDK for agent orchestration and LLM-powered patch generation
+5. Support three permission modes: "auto_apply" (merge immediately), "request_approval" (create PR for review), "notify_only" (send notification, no code changes)
+6. Implement safety guardrails: never auto-apply changes affecting >10 files, never auto-apply to production branches, always require review for authentication/encryption changes
+7. Update prompt files by inserting new requirements in appropriate sections, preserving existing structure
+8. Trigger pdd sync by creating a GitHub issue with /pdd-sync command and module name
+9. Generate code patches using LLM analysis of violations and remediation suggestions
+10. Use PyGithub to create Pull Requests with detailed descriptions, labels, and reviewers assigned
+
+Dependencies
+
+<change_tracker>
+  <include>src/change_tracker.py</include>
+</change_tracker>
+
+<toolhouse_sdk_documentation_for_agent_orchestration>
+  <web>https://docs.toolhouse.ai/</web>
+</toolhouse_sdk_documentation_for_agent_orchestration>
+
+<pygithub_pull_request_creation_and_management>
+  <web>https://pygithub.readthedocs.io/en/latest/github_objects/PullRequest.html</web>
+</pygithub_pull_request_creation_and_management>
+
+Instructions
+
+- Import Toolhouse SDK and PyGithub, initialize with API keys from environment variables
+- For update_prompt(): read existing prompt file, parse structure (Requirements, Dependencies, Instructions sections), insert new_requirements in appropriate section
+- Preserve prompt file formatting and structure; append new requirements to existing lists, don't duplicate
+- For regenerate_checker(): use PyGithub to create an issue in the RegWatch repo with title "Regenerate {module_name}" and body "/pdd-sync {module_name}"
+- Monitor issue for completion (watch for bot comment indicating success/failure)
+- For create_remediation_pr(): generate code patch using Toolhouse LLM based on violation reports
+- Check permission mode: if "notify_only", send notification and return None; if "auto_apply", check safety guardrails first
+- Safety guardrails: count affected files in patch, check if production branch, check if encryption/auth code modified; if any fail, downgrade to "request_approval"
+- Use PyGithub to create branch, commit changes, create PR with description including regulation reference, violations fixed, and testing notes
+- Assign reviewers based on code owners or default to compliance team
+- Add labels: "compliance", "automated-fix", "hipaa", severity label (critical/high/medium)
+- For auto_apply mode: if safety checks pass, auto-merge PR using PyGithub merge API
+- Return PR URL if created, None if auto-merged or notify-only
+
+Deliverable
+
+- A single Python module file: src/agents/remediation_agent.py
+- Module exports three functions: update_prompt, regenerate_checker, create_remediation_pr
+- Include helper functions for prompt parsing, patch generation, safety checks
+- All functions have complete type annotations
+- Include comprehensive docstrings explaining PDD integration, GitHub automation, and safety guardrails
+
+Implementation assumptions (explicit)
+
+- TOOLHOUSE_API_KEY and GITHUB_TOKEN environment variables are set and valid
+- RegWatch repository has PDD bot configured to respond to /pdd-sync commands
+- Customer repositories grant write access to the remediation bot's GitHub token
+- Prompt files follow standard PDD structure (Requirements, Dependencies, Instructions sections)
+- Code patches are in unified diff format compatible with git apply
+- Safety guardrails are configurable but have sensible defaults
+- Auto-merge requires branch protection rules to allow bot merging
+- Maximum patch size is 10 files or 1000 lines (larger changes require manual review)
+- PR descriptions include links to regulation changes and violation reports

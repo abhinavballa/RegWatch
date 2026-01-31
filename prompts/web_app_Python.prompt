@@ -1,0 +1,96 @@
+You are implementing the web_app module for the RegWatch compliance monitoring system. This Flask web application provides a REST API and dashboard for compliance monitoring. It implements POST /api/scan for codebase analysis, POST /api/validate-records for patient data validation, POST /api/simulate-regulation-change for demo scenarios, GET /api/change-history for audit trail, and POST /api/voice-briefing for audio summaries. It serves HTML templates with file upload, real-time progress, and results display. It uses secure file handling with zipfile extraction and cleanup.
+
+Requirements
+
+1. Implement Flask application with blueprints for code compliance and data compliance routes
+2. Implement POST /api/scan endpoint: accepts codebase ZIP upload, runs all compliance checkers, returns compliance score and violations
+3. Implement POST /api/validate-records endpoint: accepts patient records CSV, runs validator, returns validation report
+4. Implement POST /api/simulate-regulation-change endpoint: accepts regulation_id and new_text, simulates the change workflow, returns impact report
+5. Implement GET /api/change-history endpoint: returns all regulation changes from change_tracker
+6. Implement POST /api/voice-briefing endpoint: accepts scan_results, generates audio briefing, returns MP3 file
+7. Serve HTML templates: dashboard (index.html), code scanner (scan.html), data validator (validate.html), history view (history.html)
+8. Use secure file upload handling: validate file types, scan for malware signatures, limit file sizes (100MB for ZIP, 50MB for CSV)
+9. Implement file cleanup: delete uploaded files and temporary extraction directories after processing
+10. Use zipfile module for safe ZIP extraction with path traversal protection
+
+Dependencies
+
+<orchestrator>
+  <include>src/orchestrator.py</include>
+</orchestrator>
+
+<hipaa_encryption_checker>
+  <include>src/checkers/hipaa_encryption_checker.py</include>
+</hipaa_encryption_checker>
+
+<hipaa_access_control_checker>
+  <include>src/checkers/hipaa_access_control_checker.py</include>
+</hipaa_access_control_checker>
+
+<hipaa_audit_logging_checker>
+  <include>src/checkers/hipaa_audit_logging_checker.py</include>
+</hipaa_audit_logging_checker>
+
+<patient_data_validator>
+  <include>src/validators/patient_data_validator.py</include>
+</patient_data_validator>
+
+<voice_service>
+  <include>src/voice_service.py</include>
+</voice_service>
+
+<change_tracker>
+  <include>src/change_tracker.py</include>
+</change_tracker>
+
+<flask_application_factory_pattern_for_configuration>
+  <web>https://flask.palletsprojects.com/en/3.0.x/patterns/appfactories/</web>
+</flask_application_factory_pattern_for_configuration>
+
+<secure_file_upload_handling_in_flask>
+  <web>https://flask.palletsprojects.com/en/3.0.x/patterns/fileuploads/</web>
+</secure_file_upload_handling_in_flask>
+
+<zipfile_extraction_for_codebase_uploads>
+  <web>https://docs.python.org/3/library/zipfile.html</web>
+</zipfile_extraction_for_codebase_uploads>
+
+Instructions
+
+- Use Flask application factory pattern: create_app() function returns configured Flask app
+- Define blueprints: code_bp (code compliance routes), data_bp (data compliance routes), api_bp (general API routes)
+- For /api/scan: save uploaded ZIP to temp directory, extract with zipfile (validate paths to prevent traversal), run all three checkers, calculate compliance score (0-100), return JSON response, cleanup files
+- For /api/validate-records: save uploaded CSV to temp directory, call patient_data_validator.validate_records(), return validation report, cleanup file
+- For /api/simulate-regulation-change: parse JSON body, call orchestrator.handle_regulation_change() with notify_only mode, return impact report without making actual changes
+- For /api/change-history: call change_tracker.get_change_history(), return as JSON
+- For /api/voice-briefing: parse JSON body with scan_results, call voice_service.generate_briefing(), return MP3 file with audio/mpeg content-type
+- Calculate compliance score: start at 100, subtract points based on violations (critical: -20, high: -10, medium: -5, low: -2), minimum score is 0
+- Estimate fine exposure: sum fines from all violations using HIPAA penalty tiers
+- Implement secure file handling: use werkzeug.utils.secure_filename(), check file extensions against allowlist (ZIP: .zip; CSV: .csv)
+- Implement ZIP extraction safety: check each file path before extraction, reject paths with ".." or absolute paths
+- Use Flask-CORS for cross-origin requests (if frontend is separate domain)
+- Serve HTML templates from templates/ directory with Jinja2 templating
+- Implement error handling: return appropriate HTTP status codes (400 for bad requests, 500 for server errors), include error messages in JSON responses
+
+Deliverable
+
+- A single Python module file: web/app.py
+- Flask application with create_app() factory function
+- Blueprint definitions for code, data, and API routes
+- All endpoints implemented with proper request/response handling
+- Include helper functions for file cleanup, score calculation, path validation
+- All functions have complete type annotations where applicable
+- Include comprehensive docstrings explaining each endpoint and security measures
+
+Implementation assumptions (explicit)
+
+- Flask and required extensions (Flask-CORS if needed) are installed
+- Templates directory (web/templates/) contains HTML files for dashboard UI
+- Uploads directory (web/uploads/) exists and is writable for temporary file storage
+- All checker and validator modules are importable from their respective paths
+- Maximum file sizes: 100MB for ZIP uploads, 50MB for CSV uploads
+- ZIP extraction is limited to 1000 files and 500MB total uncompressed size
+- Audio briefings are generated on-demand (not cached)
+- Application runs on port 5000 by default (configurable via environment variable PORT)
+- CORS is configured to allow requests from localhost:3000 (frontend development)
+- File cleanup happens in finally blocks to ensure temporary files are always removed

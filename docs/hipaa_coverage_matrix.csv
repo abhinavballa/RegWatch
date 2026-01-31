@@ -1,0 +1,13 @@
+regulation_id,section,description,priority,fine_exposure,status,checker_module
+HIPAA § 164.312(a)(2)(iv),Encryption and Decryption,Implement mechanism to encrypt/decrypt ePHI,Critical,$100K-$1.5M,Built,hipaa_encryption_checker
+HIPAA § 164.312(a)(1),Access Control,Implement technical policies to allow only authorized access,Critical,$100K-$1.5M,Built,hipaa_access_control_checker
+HIPAA § 164.312(b),Audit Controls,Implement hardware/software mechanisms to record and examine ePHI activity,Critical,$50K-$1.5M,Built,hipaa_audit_logging_checker
+HIPAA § 164.312(a)(2)(i),Unique User Identification,Assign unique user IDs,High,$50K-$250K,Planned,hipaa_user_id_checker
+HIPAA § 164.312(a)(2)(ii),Emergency Access Procedure,Establish procedures for emergency ePHI access,High,$50K-$250K,Planned,hipaa_emergency_access_checker
+HIPAA § 164.312(a)(2)(iii),Automatic Logoff,Implement electronic session timeout,Medium,$25K-$100K,Planned,hipaa_session_timeout_checker
+HIPAA § 164.312(c)(1),Integrity,Implement policies to ensure ePHI is not improperly altered,High,$50K-$250K,Planned,hipaa_integrity_checker
+HIPAA § 164.312(c)(2),Mechanism to Authenticate ePHI,Implement electronic mechanisms to corroborate ePHI not altered,Medium,$25K-$100K,Planned,hipaa_authentication_checker
+HIPAA § 164.312(d),Person or Entity Authentication,Implement procedures to verify person/entity seeking access,Critical,$100K-$1.5M,Planned,hipaa_entity_auth_checker
+HIPAA § 164.312(e)(1),Transmission Security,Implement technical security measures for ePHI transmission,Critical,$100K-$1.5M,Planned,hipaa_transmission_checker
+HIPAA § 164.312(e)(2)(i),Integrity Controls,Implement security measures ensuring transmitted ePHI not improperly modified,High,$50K-$250K,Planned,hipaa_transmission_integrity_checker
+HIPAA § 164.312(e)(2)(ii),Encryption,Implement mechanism to encrypt ePHI during transmission,Critical,$100K-$1.5M,Planned,hipaa_transmission_encryption_checker
