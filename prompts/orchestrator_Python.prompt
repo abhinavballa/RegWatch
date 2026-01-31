@@ -24,11 +24,11 @@ Dependencies
 </voice_service>
 
 <scraper_agent>
-  <include>../src/agents/scraper_agent.py</include>
+  <include>../src/scraper_agent.py</include>
 </scraper_agent>
 
 <analysis_agent>
-  <include>../src/agents/analysis_agent.py</include>
+  <include>../src/analysis_agent.py</include>
 </analysis_agent>
 
 <impact_agent>
@@ -42,6 +42,7 @@ Dependencies
 <pytest_fixtures_for_test_accumulation_strategy>
   <web>https://docs.pytest.org/en/stable/reference/fixtures.html</web>
 </pytest_fixtures_for_test_accumulation_strategy>
+
 Instructions
 
 - For run_monitoring_cycle(): execute workflow steps in sequence: (1) scraper_agent.monitor_regulations(), (2) for each new regulation: analysis_agent.analyze_change(), (3) impact_agent.assess_impact(), (4) remediation_agent.update_prompt() and regenerate_checker(), (5) remediation_agent.create_remediation_pr()
