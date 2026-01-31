@@ -16,7 +16,7 @@ Requirements
 Dependencies
 
 <change_tracker>
-  <include>src/change_tracker_example.py</include>
+  <include>..src/change_tracker_example.py</include>
 </change_tracker>
 
 <voice_service>
