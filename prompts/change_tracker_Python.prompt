@@ -1,0 +1,53 @@
+You are implementing the change_tracker module for the RegWatch compliance monitoring system. This module provides an audit trail for all regulation updates by recording and retrieving regulation changes in a persistent JSON file (logs/regulation_changes.json). It serves as the central logging system for tracking when regulations change, what changed, the severity of changes, affected compliance checkers, and customer impact.
+
+Requirements
+
+1. Implement three core functions: log_change(), get_changes(), and get_change_history() as specified in the interface contract
+2. Maintain a JSON file at logs/regulation_changes.json with atomic write operations to prevent corruption
+3. Each change log entry must include: timestamp (ISO 8601 format), regulation_id, old_text, new_text, severity (critical/high/medium/low), affected_checkers (list), tests_added (count), and customer_impact metadata
+4. Support historical queries with optional filtering by regulation_id and datetime (since parameter)
+5. Implement atomic file writes using write-to-temp-then-rename pattern to ensure data integrity
+6. Create the logs directory if it doesn't exist
+7. Handle missing or corrupted JSON files gracefully by initializing an empty change log
+8. Return structured dictionaries matching the interface specification
+9. Use proper type hints (List, Dict, Optional, datetime) throughout
+10. Include comprehensive error handling for file I/O operations
+
+Dependencies
+
+<json_encoding_decoding_for_change_log_persistence>
+  <web>https://docs.python.org/3/library/json.html</web>
+</json_encoding_decoding_for_change_log_persistence>
+
+<timestamp_generation_for_audit_trail>
+  <web>https://docs.python.org/3/library/datetime.html</web>
+</timestamp_generation_for_audit_trail>
+
+Instructions
+
+- Create a LOG_FILE constant pointing to "logs/regulation_changes.json"
+- Implement log_change(regulation_id, old_text, new_text, severity, affected_checkers, tests_added) to append a new change entry with auto-generated timestamp and return the created entry
+- Implement get_changes(regulation_id=None, since=None) to filter and return matching change log entries based on optional parameters
+- Implement get_change_history() to return the complete change log as a dictionary with a "changes" key containing the list of all entries
+- Use os.makedirs() with exist_ok=True to ensure the logs directory exists before writing
+- For atomic writes, use tempfile.NamedTemporaryFile in the same directory as the target file, then os.replace() to atomically move it
+- Store timestamps as ISO 8601 strings using datetime.datetime.now(datetime.timezone.utc).isoformat()
+- If the log file doesn't exist or is corrupted, initialize with an empty list and log a warning
+- When filtering by since parameter, parse ISO 8601 timestamp strings and compare datetime objects
+- Include edge case handling: empty regulation text, unknown severity levels (default to "medium"), empty affected_checkers list
+
+Deliverable
+
+- A single Python module file: src/change_tracker.py
+- Module exports three functions: log_change, get_changes, get_change_history
+- All functions have complete type annotations
+- Include a module-level docstring explaining the audit trail system
+- Ensure thread-safety is not required (single-threaded execution assumed)
+
+Implementation assumptions (explicit)
+
+- The logs/ directory will be writable by the application
+- No concurrent access to the log file (no file locking required)
+- Regulation text can be arbitrarily long (no truncation)
+- Customer impact can be inferred from affected_checkers count initially
+- JSON file size will remain manageable (< 100MB) for in-memory operations

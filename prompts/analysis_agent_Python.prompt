@@ -1,0 +1,58 @@
+You are implementing the analysis_agent module for the RegWatch compliance monitoring system. This Toolhouse-powered agent uses RAG (Retrieval-Augmented Generation) and LLM to compare old vs new regulation text, performing semantic diff and impact analysis. It identifies substantive changes versus clarifications, determines severity (critical/high/medium), and maps changes to affected compliance checkers. It uses semantic diff algorithms to detect meaningful regulatory updates and estimate customer impact.
+
+Requirements
+
+1. Implement analyze_change(old_text, new_text, regulation_id) function that performs semantic diff and impact analysis
+2. Implement map_to_checkers(regulation_id, change_summary) function that identifies which compliance checkers are affected
+3. Use Toolhouse SDK's LLM capabilities with RAG for intelligent text comparison
+4. Identify substantive changes (new requirements, changed thresholds, removed exemptions) vs. clarifications (typo fixes, rewording)
+5. Determine severity based on impact: critical (new mandatory requirements), high (changed thresholds/timelines), medium (clarifications affecting interpretation), low (editorial changes)
+6. Map regulation changes to specific compliance checkers (hipaa_encryption_checker, hipaa_access_control_checker, hipaa_audit_logging_checker)
+7. Return analysis Dict with keys: "change_type" (str), "severity" (str), "affected_checkers" (list), "substantive_changes" (list), "summary" (str), "customer_impact_estimate" (str)
+8. Estimate customer impact: percentage of customers likely affected based on regulation section and historical data
+9. Use semantic similarity to group related changes and avoid duplicate reporting
+10. Include regulation section references in all changes detected
+
+Dependencies
+
+<change_tracker>
+  <include>src/change_tracker.py</include>
+</change_tracker>
+
+<toolhouse_sdk_documentation_for_rag_and_llm_integration>
+  <web>https://docs.toolhouse.ai/</web>
+</toolhouse_sdk_documentation_for_rag_and_llm_integration>
+
+Instructions
+
+- Import Toolhouse SDK and initialize with API key from environment variable TOOLHOUSE_API_KEY
+- For analyze_change(): use Toolhouse LLM to perform semantic comparison of old_text and new_text
+- Create a detailed prompt for the LLM that asks it to identify: substantive changes, severity, affected requirements, and technical implications
+- Parse LLM response to extract structured data: list of changes, severity assessment, affected regulation sections
+- Implement change classification: substantive (new/changed requirements) vs. editorial (grammar, formatting, clarification)
+- Determine severity using rules: new encryption requirements = critical, changed timeout values = high, clarified definitions = medium
+- For map_to_checkers(): maintain a mapping of regulation sections to checker modules (e.g., "164.312(a)(2)" -> hipaa_encryption_checker)
+- Use keyword matching and LLM-based classification to identify affected checkers from change summary
+- Estimate customer impact: use simple heuristics based on checker (encryption=80%, access_control=60%, audit_logging=40% of customers)
+- Return comprehensive analysis with all required fields populated
+- Handle edge cases: empty text, identical text (no changes), malformed regulation IDs
+
+Deliverable
+
+- A single Python module file: src/agents/analysis_agent.py
+- Module exports two functions: analyze_change, map_to_checkers
+- Include helper functions for severity determination, checker mapping, impact estimation
+- Include constant REGULATION_TO_CHECKER_MAP dict mapping regulation sections to checker names
+- All functions have complete type annotations
+- Include comprehensive docstrings explaining semantic diff approach and Toolhouse LLM usage
+
+Implementation assumptions (explicit)
+
+- TOOLHOUSE_API_KEY environment variable is set and valid
+- Toolhouse LLM supports RAG and semantic comparison tasks
+- Regulation text is plain text or lightly formatted (markdown/HTML cleaned)
+- Regulation IDs follow standard format: "HIPAA-XXX.XXX" or "45 CFR XXX.XXX"
+- Three main compliance checkers exist: encryption, access_control, audit_logging
+- Customer impact estimates are rough percentages (refined over time with actual data)
+- LLM responses are in structured JSON format or easily parseable text
+- Maximum regulation text size is 50,000 characters (chunking not required initially)

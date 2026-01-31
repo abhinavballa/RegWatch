@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "pdd_version": "0.0.135",
+  "timestamp_utc": "20260131T202234Z",
+  "argv": [
+    "--verbose",
+    "sync",
+    "change_tracker",
+    "--dry-run"
+  ],
+  "cwd": "/tmp/pdd_job_9lq6jXf6wc2za4JsvsrS_exrfxzqa",
+  "platform": {
+    "system": "Linux",
+    "release": "4.4.0",
+    "version": "#1 SMP Sun Jan 10 15:06:54 PST 2016",
+    "python": "3.12.3 (main, Jan  8 2026, 11:30:50) [GCC 13.3.0]"
+  },
+  "global_options": {
+    "force": false,
+    "strength": null,
+    "temperature": null,
+    "time": 0.25,
+    "verbose": true,
+    "quiet": false,
+    "local": false,
+    "context": null,
+    "output_cost": null,
+    "review_examples": false
+  },
+  "invoked_subcommands": [
+    "sync"
+  ],
+  "total_cost": 0.0,
+  "steps": [
+    {
+      "step": 1,
+      "command": "sync",
+      "cost": 0.0,
+      "model": ""
+    }
+  ],
+  "errors": [],
+  "environment": {
+    "PDD_OUTPUT_COST_PATH": "/tmp/pdd_job_9lq6jXf6wc2za4JsvsrS_exrfxzqa/pdd_cost.csv",
+    "PDD_FORCE": "1",
+    "PDD_AUTO_UPDATE": "false",
+    "PDD_PATH": "/opt/pdd-repo/pdd",
+    "PATH": "/opt/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+    "PDD_BOT_USERNAME": "prompt-driven-github[bot]"
+  },
+  "file_contents": {},
+  "terminal_output": "=== STDOUT ===\n\u256d\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 PDD Sync Dry Run \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 Displaying sync analysis for change_tracker \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n\n--- Log for language: python ---\nNo sync log found for 'change_tracker' in language 'python'.\n\n--- Command Execution Summary ---\n  Step 1 (sync): Cost: $0.000000, Model: \nTotal Estimated Cost: $0.000000\n-------------------------------------\n"
+}

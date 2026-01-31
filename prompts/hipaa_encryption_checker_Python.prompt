@@ -1,0 +1,57 @@
+You are implementing the hipaa_encryption_checker module for the RegWatch compliance monitoring system. This PDD-generated compliance checker validates HIPAA § 164.312(a)(2)(iv) encryption requirements by analyzing Python code using AST (Abstract Syntax Tree) parsing. It checks for database encryption at rest (AES-256+), encryption in transit (TLS 1.2+), field-level PHI encryption, and proper key management (separate storage, 90-day rotation). This module will have approximately 47 tests covering various encryption scenarios.
+
+Requirements
+
+1. Implement check_encryption(code_path) function that analyzes Python files for HIPAA encryption compliance
+2. Use Python's ast module to parse and analyze code without executing it
+3. Detect database encryption at rest: check for AES-256, AES-192, or stronger algorithms in SQLAlchemy column definitions or ORM models
+4. Detect encryption in transit: check for TLS 1.2+ configuration in database connection strings, API clients, and network configurations
+5. Detect field-level PHI encryption: verify sensitive fields (SSN, medical_record_number, diagnosis, etc.) are encrypted
+6. Validate key management: ensure encryption keys are not hardcoded, are stored separately from encrypted data, and have rotation policies
+7. Return violation report as Dict with keys: "findings" (list of violations), "compliant" (boolean), "severity" (str), "regulation_reference" (str)
+8. Each finding must include: line_number, violation_type, description, remediation_suggestion, severity (critical/high/medium/low)
+9. Generate regulation references for each violation (e.g., "HIPAA § 164.312(a)(2)(iv)")
+10. Support analyzing single files or entire directories recursively
+
+Dependencies
+
+<python_ast_module_for_static_code_analysis>
+  <web>https://docs.python.org/3/library/ast.html</web>
+</python_ast_module_for_static_code_analysis>
+
+<nist_sp_800_66r2_hipaa_security_rule_implementation_guide>
+  <web>https://csrc.nist.gov/pubs/sp/800/66/r2/final</web>
+</nist_sp_800_66r2_hipaa_security_rule_implementation_guide>
+
+Instructions
+
+- Create AST visitor classes to detect encryption patterns: EncryptionDetector(ast.NodeVisitor)
+- Check for encryption libraries: look for imports of cryptography, pycryptodome, Crypto, or similar packages
+- Detect database encryption: search for Column definitions with encryption decorators or encrypt=True parameters
+- Detect TLS configuration: search for ssl_mode, sslmode, or tls_version parameters in connection strings or database URLs
+- Identify PHI fields: maintain a list of common PHI field names (ssn, social_security_number, medical_record, diagnosis, prescription, etc.)
+- Check for hardcoded keys: detect string literals or bytes literals assigned to variables named *key*, *secret*, *password* near encryption calls
+- Validate key rotation: search for comments or configuration mentioning key rotation policies, check for timestamp-based key selection
+- For each violation found, include the exact line number from the AST node, a clear description, and actionable remediation
+- Implement helper function _is_strong_encryption(algorithm_name: str) -> bool to validate encryption strength (AES-256+, RSA-2048+)
+- Support both .py files and directories; for directories, recursively find all .py files
+- Return compliant=True only if zero critical or high severity violations found
+- Calculate overall severity: critical if any critical violations, high if any high violations, otherwise medium/low
+
+Deliverable
+
+- A single Python module file: src/checkers/hipaa_encryption_checker.py
+- Module exports one primary function: check_encryption
+- Include AST visitor class(es) for detecting encryption patterns
+- Include helper functions for PHI field identification, encryption algorithm validation
+- All functions have complete type annotations
+- Include comprehensive docstrings explaining HIPAA § 164.312(a)(2)(iv) requirements
+
+Implementation assumptions (explicit)
+
+- Code to analyze is valid Python 3.7+ syntax
+- SQLAlchemy or Django ORM is used for database models (most common in Python)
+- Encryption library imports are at module level (not dynamic imports)
+- Key management configuration may be in separate config files (check for references)
+- 47 tests will cover: AES-256 detection, TLS 1.2+ detection, hardcoded key detection, PHI field encryption, key rotation validation, and various edge cases
+- Test files will be provided separately via PDD sync process

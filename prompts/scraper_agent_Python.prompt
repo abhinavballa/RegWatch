@@ -1,0 +1,58 @@
+You are implementing the scraper_agent module for the RegWatch compliance monitoring system. This Toolhouse-powered agent monitors regulatory websites (HHS.gov, FDA.gov, Federal Register) for new HIPAA regulatory publications using the web_search tool. It detects regulation changes, extracts regulation text, and returns structured data with regulation ID, publication date, and full text. It uses the Toolhouse SDK for automated web scraping with retry logic.
+
+Requirements
+
+1. Implement monitor_regulations(sources) function that monitors specified regulatory websites for new publications
+2. Implement extract_regulation(url) function that extracts full regulation text and metadata from a given URL
+3. Use Toolhouse SDK's web_search tool to query regulatory websites
+4. Support monitoring HHS.gov, FDA.gov, and Federal Register by default
+5. Detect new regulation publications by comparing against previously seen regulation IDs (stored in change_tracker)
+6. Extract structured data: regulation_id (e.g., "HIPAA-164.312"), title, publication_date, full_text, source_url
+7. Return list of new regulations found, with each as a Dict containing the extracted fields
+8. Implement retry logic for web requests (3 retries with exponential backoff)
+9. Handle rate limiting from government websites (respect 1-second delay between requests)
+10. Log all scraping activity and errors for debugging
+
+Dependencies
+
+<change_tracker>
+  <include>src/change_tracker.py</include>
+</change_tracker>
+
+<toolhouse_sdk_documentation_for_agent_deployment_and_tool_usage>
+  <web>https://docs.toolhouse.ai/</web>
+</toolhouse_sdk_documentation_for_agent_deployment_and_tool_usage>
+
+Instructions
+
+- Import Toolhouse SDK and initialize with API key from environment variable TOOLHOUSE_API_KEY
+- For monitor_regulations(): iterate through each source, construct search queries for recent HIPAA regulations, use Toolhouse web_search tool
+- Parse search results to extract regulation URLs, titles, and publication dates
+- For each found regulation, check if regulation_id exists in change_tracker history (avoid re-processing)
+- For extract_regulation(): use Toolhouse web_fetch or web_search to retrieve full regulation page, parse HTML to extract text content
+- Extract regulation_id from URL or page title (e.g., "45 CFR 164.312" -> "HIPAA-164.312")
+- Parse publication date from page metadata or text (handle various date formats)
+- Clean extracted text: remove HTML tags, navigation elements, footers; preserve section structure
+- Implement retry logic using time.sleep() with exponential backoff: 1s, 2s, 4s
+- Respect rate limits: enforce minimum 1-second delay between requests to same domain
+- Log all scraping activity using Python logging module
+- Return empty list if no new regulations found (not an error condition)
+
+Deliverable
+
+- A single Python module file: src/agents/scraper_agent.py
+- Module exports two functions: monitor_regulations, extract_regulation
+- Include helper functions for URL parsing, date parsing, text cleaning
+- All functions have complete type annotations
+- Include comprehensive docstrings explaining Toolhouse integration and scraping strategy
+
+Implementation assumptions (explicit)
+
+- TOOLHOUSE_API_KEY environment variable is set and valid
+- Toolhouse web_search tool is available and configured
+- Government websites allow automated access (robots.txt compliance)
+- Regulation URLs follow predictable patterns for ID extraction
+- Publication dates are in standard formats (ISO 8601, "Month DD, YYYY", etc.)
+- HTML structure of government sites is relatively stable (handle minor variations)
+- Change tracker is available for checking previously seen regulation IDs
+- Maximum 100 regulations returned per monitoring cycle (pagination not required initially)

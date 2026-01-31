@@ -1,0 +1,57 @@
+You are implementing the hipaa_access_control_checker module for the RegWatch compliance monitoring system. This PDD-generated compliance checker validates HIPAA § 164.312(a)(1) access control requirements by analyzing Python code using AST parsing. It detects unique user IDs, role-based access control (RBAC), authentication on endpoints, session management (15-minute timeout), and multi-factor authentication for remote access. This module will have approximately 38 tests covering access control scenarios.
+
+Requirements
+
+1. Implement check_access_control(code_path) function that analyzes Python files for HIPAA access control compliance
+2. Use Python's ast module to parse and analyze code without executing it
+3. Detect unique user identification: verify user models have unique ID fields, authentication decorators require user identity
+4. Detect role-based access control: check for role/permission checks in views, decorators like @require_role, or permission_required
+5. Detect authentication on ePHI endpoints: verify all routes accessing PHI have authentication decorators (@login_required, @authenticated, etc.)
+6. Validate session timeout: check for session configuration with max_age, timeout, or expires settings <= 15 minutes (900 seconds)
+7. Detect multi-factor authentication: search for MFA/2FA verification in login flows, TOTP, SMS verification, or authentication app integration
+8. Return violation report as Dict with keys: "findings" (list), "compliant" (boolean), "severity" (str), "regulation_reference" (str)
+9. Each finding must include: line_number, violation_type, description, remediation_suggestion, severity
+10. Support analyzing Flask, Django, FastAPI, and generic Python web frameworks
+
+Dependencies
+
+<python_ast_module_for_static_code_analysis>
+  <web>https://docs.python.org/3/library/ast.html</web>
+</python_ast_module_for_static_code_analysis>
+
+<nist_sp_800_66r2_hipaa_security_rule_implementation_guide>
+  <web>https://csrc.nist.gov/pubs/sp/800/66/r2/final</web>
+</nist_sp_800_66r2_hipaa_security_rule_implementation_guide>
+
+Instructions
+
+- Create AST visitor classes: AccessControlDetector(ast.NodeVisitor) to detect access control patterns
+- Detect user model unique IDs: look for User class definitions with id, user_id, or uuid fields marked as primary key or unique
+- Detect authentication decorators: search for function decorators matching @login_required, @authenticated, @require_auth, etc.
+- Identify ePHI endpoints: search for route handlers with PHI-related names (patient, medical, diagnosis, prescription, etc.) or PHI model access
+- Check endpoint authentication: verify all ePHI endpoints have authentication decorator applied
+- Detect RBAC: search for role checks (if user.role, @require_role('admin'), permission_required), Role model definitions
+- Validate session timeout: parse session configuration dicts/objects for timeout values, ensure <= 900 seconds
+- Detect MFA: search for two-factor, mfa, totp, verify_code function calls in authentication flows
+- For each violation, provide specific line numbers and remediation steps (e.g., "Add @login_required decorator to function")
+- Implement helper function _is_phi_related(name: str) -> bool to identify PHI-related variables/functions
+- Calculate overall severity: critical for unauthenticated ePHI access, high for missing MFA on remote access, medium for session timeout issues
+
+Deliverable
+
+- A single Python module file: src/checkers/hipaa_access_control_checker.py
+- Module exports one primary function: check_access_control
+- Include AST visitor class(es) for detecting access control patterns
+- Include helper functions for PHI endpoint identification, decorator detection
+- All functions have complete type annotations
+- Include comprehensive docstrings explaining HIPAA § 164.312(a)(1) requirements
+
+Implementation assumptions (explicit)
+
+- Code to analyze is valid Python 3.7+ syntax
+- Web framework is Flask, Django, or FastAPI (detect which one based on imports)
+- Authentication decorators follow standard naming conventions
+- Session configuration is in a config file or settings module
+- MFA implementation uses standard libraries (pyotp, django-otp, etc.)
+- 38 tests will cover: unique user ID detection, authentication decorator detection, RBAC verification, session timeout validation, MFA detection, and framework-specific patterns
+- Remote access is determined by presence of API endpoints or external-facing routes
