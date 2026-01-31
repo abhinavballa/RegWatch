@@ -16,7 +16,7 @@ Requirements
 Dependencies
 
 <change_tracker>
-  <include>src/change_tracker_example.py</include>
+  <include>prompts/change_tracker_example.py</include>
 </change_tracker>
 
 <toolhouse_sdk_documentation_for_rag_and_llm_integration>
