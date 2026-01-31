@@ -16,27 +16,27 @@ Requirements
 Dependencies
 
 <change_tracker>
-  <include>..src/change_tracker_example.py</include>
+  <include>../src/change_tracker.py</include>
 </change_tracker>
 
 <voice_service>
-  <include>src/voice_service_example.py</include>
+  <include>../src/voice_service.py</include>
 </voice_service>
 
 <scraper_agent>
-  <include>src/agents/scraper_agent_example.py</include>
+  <include>../src/agents/scraper_agent.py</include>
 </scraper_agent>
 
 <analysis_agent>
-  <include>src/agents/analysis_agent_example.py</include>
+  <include>../src/agents/analysis_agent.py</include>
 </analysis_agent>
 
 <impact_agent>
-  <include>src/agents/impact_agent_example.py</include>
+  <include>../src/impact_agent.py</include>
 </impact_agent>
 
 <remediation_agent>
-  <include>src/agents/remediation_agent_example.py</include>
+  <include>../src/agents/remediation_agent.py</include>
 </remediation_agent>
 
 <pytest_fixtures_for_test_accumulation_strategy>
