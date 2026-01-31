@@ -20,15 +20,15 @@ Dependencies
 </change_tracker>
 
 <hipaa_encryption_checker>
-  <include>src/checkers/hipaa_encryption_checker.py</include>
+  <include>src/checkers/hipaa_encryption_checker_example.py</include>
 </hipaa_encryption_checker>
 
 <hipaa_access_control_checker>
-  <include>src/checkers/hipaa_access_control_checker.py</include>
+  <include>src/checkers/hipaa_access_control_checker_example.py</include>
 </hipaa_access_control_checker>
 
 <hipaa_audit_logging_checker>
-  <include>src/checkers/hipaa_audit_logging_checker.py</include>
+  <include>src/checkers/hipaa_audit_logging_checker_example.py</include>
 </hipaa_audit_logging_checker>
 
 <toolhouse_sdk_documentation_for_code_execution_capabilities>
