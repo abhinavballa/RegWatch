@@ -16,7 +16,7 @@ Requirements
 Dependencies
 
 <orchestrator>
-  <include>..src/orchestrator_example.py</include>
+  <include>../src/orchestrator_example.py</include>
 </orchestrator>
 
 <hipaa_encryption_checker>
