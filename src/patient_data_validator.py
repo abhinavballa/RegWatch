@@ -24,6 +24,17 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional, Union
 import logging
 
+# Handle different pandera versions
+try:
+    from pandera import SchemaModel
+except (ImportError, AttributeError):
+    # For pandera >= 0.17, SchemaModel is in a different location
+    try:
+        from pandera.api.pandas.model import SchemaModel
+    except (ImportError, AttributeError):
+        # Create a simple fallback
+        SchemaModel = type('SchemaModel', (), {})
+
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -33,7 +44,7 @@ RETENTION_YEARS = 7
 CHUNK_SIZE = 10000
 MIN_ENCRYPTED_LENGTH = 10  # Heuristic: encrypted strings are usually long
 
-class PatientRecordSchema(pa.SchemaModel):
+class PatientRecordSchema(SchemaModel):
     """
     Pandera SchemaModel defining the expected structure and basic validation rules
     for patient records.

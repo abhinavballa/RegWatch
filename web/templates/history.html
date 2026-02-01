@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Change History - RegWatch</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="logo">RegWatch</h1>
+            <div class="nav-links">
+                <a href="/">Dashboard</a>
+                <a href="/scan">Code Scan</a>
+                <a href="/validate">Data Validation</a>
+                <a href="/history" class="active">Change History</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Regulation Change History & Audit Trail</h1>
+            <p>Complete record of regulation updates and automated remediations</p>
+        </div>
+
+        <!-- Filters -->
+        <div class="card history-filters">
+            <div class="filter-group">
+                <label>Time Range:</label>
+                <select id="time-filter" onchange="filterHistory()">
+                    <option value="all">All Time</option>
+                    <option value="24h" selected>Last 24 Hours</option>
+                    <option value="week">Last Week</option>
+                    <option value="month">Last Month</option>
+                    <option value="year">Last Year</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Change Type:</label>
+                <select id="type-filter" onchange="filterHistory()">
+                    <option value="all">All Types</option>
+                    <option value="regulation">Regulation Updates</option>
+                    <option value="remediation">Auto-Remediation</option>
+                    <option value="scan">Compliance Scans</option>
+                    <option value="prompt">Prompt Updates</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Severity:</label>
+                <select id="severity-filter" onchange="filterHistory()">
+                    <option value="all">All Severities</option>
+                    <option value="critical">Critical</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                </select>
+            </div>
+
+            <button class="btn btn-secondary" onclick="refreshHistory()">🔄 Refresh</button>
+            <button class="btn btn-secondary" onclick="exportHistory()">📥 Export</button>
+        </div>
+
+        <!-- Timeline -->
+        <div class="timeline" id="history-timeline">
+            <!-- Regulation Update Entry -->
+            <div class="timeline-entry" data-type="regulation" data-severity="high">
+                <div class="timeline-marker regulation"></div>
+                <div class="timeline-content card">
+                    <div class="timeline-header">
+                        <div class="timeline-title">
+                            <span class="timeline-icon">📜</span>
+                            <h3>HIPAA Encryption Requirements Updated</h3>
+                        </div>
+                        <div class="timeline-meta">
+                            <span class="badge high">HIGH</span>
+                            <span class="timestamp">Jan 31, 2026 - 2:30 PM</span>
+                        </div>
+                    </div>
+
+                    <div class="timeline-body">
+                        <p><strong>Regulation:</strong> HIPAA § 164.312(a)(2)(iv)</p>
+                        <p><strong>Source:</strong> HHS.gov Official Updates</p>
+                        <p><strong>Change Summary:</strong> Encryption requirements strengthened to require FIPS 140-2 certified modules</p>
+
+                        <details class="timeline-details">
+                            <summary>View Full Change Details</summary>
+                            <div class="change-comparison">
+                                <div class="change-column">
+                                    <h4>Previous Requirement</h4>
+                                    <div class="change-text old">
+                                        <p>Implement a mechanism to encrypt electronic protected health information (ePHI) using AES-256 or stronger encryption algorithm.</p>
+                                    </div>
+                                </div>
+                                <div class="change-column">
+                                    <h4>New Requirement</h4>
+                                    <div class="change-text new">
+                                        <p>Implement a mechanism to encrypt electronic protected health information (ePHI) using AES-256-GCM or stronger encryption algorithm. All cryptographic modules must be FIPS 140-2 Level 2 certified or higher.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="impact-summary">
+                                <h4>Impact Assessment</h4>
+                                <ul>
+                                    <li><strong>Affected Systems:</strong> 3 customer codebases</li>
+                                    <li><strong>Modules Requiring Update:</strong> hipaa_encryption_checker</li>
+                                    <li><strong>Estimated Remediation Time:</strong> Automated (< 5 minutes)</li>
+                                    <li><strong>Risk if Not Addressed:</strong> $50,000 - $250,000 per violation</li>
+                                </ul>
+                            </div>
+                        </details>
+
+                        <div class="timeline-actions">
+                            <span class="action-badge">✅ Agent Actions Triggered</span>
+                            <a href="#remediation-247" class="btn btn-sm btn-link">View Remediation →</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prompt Update Entry -->
+            <div class="timeline-entry" data-type="prompt" data-severity="high">
+                <div class="timeline-marker prompt"></div>
+                <div class="timeline-content card">
+                    <div class="timeline-header">
+                        <div class="timeline-title">
+                            <span class="timeline-icon">📝</span>
+                            <h3>Prompt Updated: hipaa_encryption_python.prompt</h3>
+                        </div>
+                        <div class="timeline-meta">
+                            <span class="badge high">HIGH</span>
+                            <span class="timestamp">Jan 31, 2026 - 2:35 PM</span>
+                        </div>
+                    </div>
+
+                    <div class="timeline-body">
+                        <p><strong>Agent:</strong> Remediation Agent</p>
+                        <p><strong>Action:</strong> Updated prompt file to reflect new HIPAA encryption requirements</p>
+
+                        <details class="timeline-details">
+                            <summary>View Prompt Changes</summary>
+                            <div class="code-diff-container">
+                                <pre class="code-diff">
+<span class="diff-line-number">42</span> <span class="diff-context">REQUIREMENT: Encrypt ePHI at rest using encryption</span>
+<span class="diff-line-number">43</span>
+<span class="diff-line-number">44</span> <span class="diff-context">TECHNICAL SPECS (NIST SP 800-66):</span>
+<span class="diff-line-number">45</span> <span class="diff-removed">- Algorithm: AES-256 or stronger</span>
+<span class="diff-line-number">46</span> <span class="diff-added">+ Algorithm: AES-256-GCM or AES-512-GCM</span>
+<span class="diff-line-number">47</span> <span class="diff-added">+ Cryptographic Module: FIPS 140-2 Level 2+ certified</span>
+<span class="diff-line-number">48</span> <span class="diff-context">- Key management: Separate storage, 90-day rotation</span>
+<span class="diff-line-number">49</span> <span class="diff-context">- Validation: Automated compliance checks</span>
+<span class="diff-line-number">50</span>
+<span class="diff-line-number">51</span> <span class="diff-context">ENFORCEMENT:</span>
+<span class="diff-line-number">52</span> <span class="diff-context">- Anthem Inc. (2018): $16M fine for unencrypted ePHI</span>
+<span class="diff-line-number">53</span> <span class="diff-added">+ Kaiser Permanente (2025): $12M fine for non-FIPS encryption</span>
+</pre>
+                            </div>
+
+                            <div class="git-info">
+                                <p><strong>Git Commit:</strong> <code>a3f7b2c</code></p>
+                                <p><strong>Files Changed:</strong> prompts/hipaa_encryption_python.prompt</p>
+                                <p><strong>Lines Modified:</strong> +5, -2</p>
+                            </div>
+                        </details>
+
+                        <div class="timeline-actions">
+                            <a href="https://github.com/abhinavballa/RegWatch/commit/a3f7b2c" class="btn btn-sm btn-secondary" target="_blank">View Git Commit</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Code Regeneration Entry -->
+            <div class="timeline-entry" data-type="remediation" data-severity="high" id="remediation-247">
+                <div class="timeline-marker remediation"></div>
+                <div class="timeline-content card">
+                    <div class="timeline-header">
+                        <div class="timeline-title">
+                            <span class="timeline-icon">🔧</span>
+                            <h3>Code Regenerated via PDD</h3>
+                        </div>
+                        <div class="timeline-meta">
+                            <span class="badge high">HIGH</span>
+                            <span class="timestamp">Jan 31, 2026 - 2:40 PM</span>
+                        </div>
+                    </div>
+
+                    <div class="timeline-body">
+                        <p><strong>Agent:</strong> Remediation Agent</p>
+                        <p><strong>Module:</strong> hipaa_encryption_checker.py</p>
+                        <p><strong>Method:</strong> PDD Sync via GitHub Issues</p>
+
+                        <details class="timeline-details">
+                            <summary>View Regenerated Code Changes</summary>
+                            <div class="code-diff-container">
+                                <h4>src/checkers/hipaa_encryption_checker.py</h4>
+                                <pre class="code-diff">
+<span class="diff-line-number">156</span> <span class="diff-context">def check_encryption_algorithm(config: Dict[str, Any]) -> Dict[str, Any]:</span>
+<span class="diff-line-number">157</span> <span class="diff-context">    """</span>
+<span class="diff-line-number">158</span> <span class="diff-context">    Validates encryption algorithm meets HIPAA requirements.</span>
+<span class="diff-line-number">159</span> <span class="diff-added">+   Updated: Jan 2026 - Now requires FIPS 140-2 certification</span>
+<span class="diff-line-number">160</span> <span class="diff-context">    """</span>
+<span class="diff-line-number">161</span> <span class="diff-context">    findings = []</span>
+<span class="diff-line-number">162</span> <span class="diff-context">    </span>
+<span class="diff-line-number">163</span> <span class="diff-removed">-   allowed_algorithms = ['AES-256', 'AES-512', 'AES-256-CBC']</span>
+<span class="diff-line-number">164</span> <span class="diff-added">+   allowed_algorithms = ['AES-256-GCM', 'AES-512-GCM', 'ChaCha20-Poly1305']</span>
+<span class="diff-line-number">165</span> <span class="diff-context">    algorithm = config.get('algorithm', 'unknown')</span>
+<span class="diff-line-number">166</span> <span class="diff-context">    </span>
+<span class="diff-line-number">167</span> <span class="diff-added">+   # Check FIPS 140-2 certification</span>
+<span class="diff-line-number">168</span> <span class="diff-added">+   fips_certified = config.get('fips_140_2_certified', False)</span>
+<span class="diff-line-number">169</span> <span class="diff-added">+   fips_level = config.get('fips_level', 0)</span>
+<span class="diff-line-number">170</span> <span class="diff-added">+   </span>
+<span class="diff-line-number">171</span> <span class="diff-context">    if algorithm not in allowed_algorithms:</span>
+<span class="diff-line-number">172</span> <span class="diff-context">        findings.append({</span>
+<span class="diff-line-number">173</span> <span class="diff-removed">-           'message': f'Weak encryption: {algorithm}',</span>
+<span class="diff-line-number">174</span> <span class="diff-added">+           'message': f'Non-compliant encryption algorithm: {algorithm}. Use AES-256-GCM or stronger.',</span>
+<span class="diff-line-number">175</span> <span class="diff-context">            'severity': 'critical',</span>
+<span class="diff-line-number">176</span> <span class="diff-context">            'regulation': 'HIPAA § 164.312(a)(2)(iv)'</span>
+<span class="diff-line-number">177</span> <span class="diff-context">        })</span>
+<span class="diff-line-number">178</span> <span class="diff-added">+   </span>
+<span class="diff-line-number">179</span> <span class="diff-added">+   if not fips_certified or fips_level < 2:</span>
+<span class="diff-line-number">180</span> <span class="diff-added">+       findings.append({</span>
+<span class="diff-line-number">181</span> <span class="diff-added">+           'message': 'Cryptographic module not FIPS 140-2 Level 2+ certified',</span>
+<span class="diff-line-number">182</span> <span class="diff-added">+           'severity': 'critical',</span>
+<span class="diff-line-number">183</span> <span class="diff-added">+           'regulation': 'HIPAA § 164.312(a)(2)(iv) - 2026 Update',</span>
+<span class="diff-line-number">184</span> <span class="diff-added">+           'remediation': 'Use FIPS 140-2 certified encryption libraries'</span>
+<span class="diff-line-number">185</span> <span class="diff-added">+       })</span>
+<span class="diff-line-number">186</span> <span class="diff-context">    </span>
+<span class="diff-line-number">187</span> <span class="diff-context">    return {'findings': findings}</span>
+</pre>
+                            </div>
+
+                            <div class="test-results">
+                                <h4>Test Suite Updates</h4>
+                                <p><strong>Tests Before:</strong> 47 tests</p>
+                                <p><strong>Tests After:</strong> 51 tests (+4 new tests)</p>
+                                <p><strong>Status:</strong> ✅ All tests passing</p>
+                                <div class="new-tests">
+                                    <p><strong>New Tests Added:</strong></p>
+                                    <ul>
+                                        <li>test_fips_140_2_certification_required()</li>
+                                        <li>test_fips_level_2_minimum()</li>
+                                        <li>test_aes_gcm_mode_required()</li>
+                                        <li>test_legacy_algorithms_rejected()</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </details>
+
+                        <div class="timeline-actions">
+                            <a href="https://github.com/abhinavballa/RegWatch/pull/247" class="btn btn-sm btn-primary" target="_blank">View Pull Request #247</a>
+                            <button class="btn btn-sm btn-secondary" onclick="viewTestResults(247)">View Test Results</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer Impact Entry -->
+            <div class="timeline-entry" data-type="scan" data-severity="medium">
+                <div class="timeline-marker scan"></div>
+                <div class="timeline-content card">
+                    <div class="timeline-header">
+                        <div class="timeline-title">
+                            <span class="timeline-icon">🎯</span>
+                            <h3>Customer Codebases Re-scanned</h3>
+                        </div>
+                        <div class="timeline-meta">
+                            <span class="badge medium">MEDIUM</span>
+                            <span class="timestamp">Jan 31, 2026 - 2:45 PM</span>
+                        </div>
+                    </div>
+
+                    <div class="timeline-body">
+                        <p><strong>Agent:</strong> Impact Agent</p>
+                        <p><strong>Action:</strong> Re-ran encryption checker on all customer codebases</p>
+                        <p><strong>Results:</strong> 2 of 3 customers require updates</p>
+
+                        <details class="timeline-details">
+                            <summary>View Customer Impact</summary>
+                            <div class="customer-impact">
+                                <div class="customer-item non-compliant">
+                                    <h4>❌ St. Mary's Hospital</h4>
+                                    <p><strong>Status:</strong> Non-Compliant</p>
+                                    <p><strong>Issue:</strong> Using AES-256-CBC instead of AES-256-GCM</p>
+                                    <p><strong>Fix:</strong> Auto-generated patch created</p>
+                                    <p><strong>PR:</strong> <a href="https://github.com/st-marys/backend/pull/142">#142</a></p>
+                                </div>
+
+                                <div class="customer-item compliant">
+                                    <h4>✅ Memorial Hospital</h4>
+                                    <p><strong>Status:</strong> Compliant</p>
+                                    <p><strong>Details:</strong> Already using AES-256-GCM with FIPS 140-2 certified modules</p>
+                                </div>
+
+                                <div class="customer-item non-compliant">
+                                    <h4>❌ Community Health</h4>
+                                    <p><strong>Status:</strong> Non-Compliant</p>
+                                    <p><strong>Issue:</strong> Encryption module not FIPS 140-2 certified</p>
+                                    <p><strong>Fix:</strong> Requires manual library upgrade</p>
+                                    <p><strong>Issue:</strong> <a href="https://github.com/community-health/api/issues/89">#89</a></p>
+                                </div>
+                            </div>
+                        </details>
+
+                        <div class="timeline-actions">
+                            <span class="action-badge">2 PRs Created</span>
+                            <span class="action-badge">1 Issue Created</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Historical Entry -->
+            <div class="timeline-entry" data-type="regulation" data-severity="medium">
+                <div class="timeline-marker regulation"></div>
+                <div class="timeline-content card">
+                    <div class="timeline-header">
+                        <div class="timeline-title">
+                            <span class="timeline-icon">📜</span>
+                            <h3>HIPAA Audit Logging Requirements Clarified</h3>
+                        </div>
+                        <div class="timeline-meta">
+                            <span class="badge medium">MEDIUM</span>
+                            <span class="timestamp">Jan 28, 2026 - 10:15 AM</span>
+                        </div>
+                    </div>
+
+                    <div class="timeline-body">
+                        <p><strong>Regulation:</strong> HIPAA § 164.312(b)</p>
+                        <p><strong>Source:</strong> HHS.gov Official Updates</p>
+                        <p><strong>Change Summary:</strong> Clarified 6-year retention requirement applies to all access logs</p>
+
+                        <div class="timeline-actions">
+                            <span class="action-badge">✅ No Code Changes Required</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Load More -->
+        <div class="load-more-container">
+            <button class="btn btn-secondary" onclick="loadMoreHistory()">Load More History</button>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+    <script>
+        // Load history from API
+        async function loadHistory() {
+            try {
+                const response = await fetch('/api/change-history');
+                const data = await response.json();
+                // Process and display history
+                console.log('History loaded:', data);
+            } catch (error) {
+                console.error('Failed to load history:', error);
+            }
+        }
+
+        function filterHistory() {
+            const timeFilter = document.getElementById('time-filter').value;
+            const typeFilter = document.getElementById('type-filter').value;
+            const severityFilter = document.getElementById('severity-filter').value;
+
+            const entries = document.querySelectorAll('.timeline-entry');
+
+            entries.forEach(entry => {
+                let show = true;
+
+                // Type filter
+                if (typeFilter !== 'all' && entry.getAttribute('data-type') !== typeFilter) {
+                    show = false;
+                }
+
+                // Severity filter
+                if (severityFilter !== 'all' && entry.getAttribute('data-severity') !== severityFilter) {
+                    show = false;
+                }
+
+                // Time filter would require timestamp comparison
+                // Simplified here for demo
+
+                entry.style.display = show ? 'flex' : 'none';
+            });
+        }
+
+        function refreshHistory() {
+            loadHistory();
+        }
+
+        function exportHistory() {
+            alert('Export functionality coming soon!');
+        }
+
+        function loadMoreHistory() {
+            alert('Loading more history...');
+        }
+
+        function viewTestResults(prNumber) {
+            alert(`Viewing test results for PR #${prNumber}`);
+        }
+
+        // Load history on page load
+        document.addEventListener('DOMContentLoaded', loadHistory);
+    </script>
+</body>
+</html>

@@ -37,12 +37,13 @@ from datetime import datetime
 
 # Import Agents and Services
 try:
-    from src.agents import scraper_agent
-    from src.agents import analysis_agent
-    from src.agents import impact_agent
-    from src.agents import remediation_agent
-    import change_tracker
-    import voice_service
+    # Agents are in src/ directory, not src/agents/
+    from src import scraper_agent
+    from src import analysis_agent
+    from src import impact_agent
+    from src import remediation_agent
+    from src import change_tracker
+    from src import voice_service
 except ImportError:
     # Fallback for standalone testing or flat directory structures
     import scraper_agent

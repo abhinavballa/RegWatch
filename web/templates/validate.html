@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Validation - RegWatch</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="logo">RegWatch</h1>
+            <div class="nav-links">
+                <a href="/">Dashboard</a>
+                <a href="/scan">Code Scan</a>
+                <a href="/validate" class="active">Data Validation</a>
+                <a href="/history">Change History</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Patient Data Validation</h1>
+            <p>Validate patient records for HIPAA compliance</p>
+        </div>
+
+        <!-- Upload Section -->
+        <div class="card upload-section">
+            <h2>Upload Patient Records</h2>
+            <div class="upload-zone" id="upload-zone">
+                <div class="upload-icon">📊</div>
+                <p class="upload-text">Drag and drop your patient records CSV file here</p>
+                <p class="upload-subtext">or</p>
+                <label for="file-input" class="btn btn-primary">Browse Files</label>
+                <input type="file" id="file-input" accept=".csv" style="display: none;" onchange="handleFileSelect(event)">
+                <p class="upload-hint">Maximum file size: 50MB</p>
+            </div>
+
+            <div id="file-info" class="file-info" style="display: none;">
+                <div class="file-details">
+                    <span class="file-icon">📄</span>
+                    <span id="file-name"></span>
+                    <span id="file-size"></span>
+                </div>
+                <button class="btn btn-danger btn-sm" onclick="clearFile()">Remove</button>
+            </div>
+
+            <div class="validation-info">
+                <h3>What We Check</h3>
+                <div class="checks-grid">
+                    <div class="check-item">
+                        <span class="check-icon">🔐</span>
+                        <span>PHI Encryption</span>
+                    </div>
+                    <div class="check-item">
+                        <span class="check-icon">✍️</span>
+                        <span>Consent Forms</span>
+                    </div>
+                    <div class="check-item">
+                        <span class="check-icon">📝</span>
+                        <span>Access Logs</span>
+                    </div>
+                    <div class="check-item">
+                        <span class="check-icon">⏱️</span>
+                        <span>Data Retention</span>
+                    </div>
+                    <div class="check-item">
+                        <span class="check-icon">🆔</span>
+                        <span>Patient Identifiers</span>
+                    </div>
+                    <div class="check-item">
+                        <span class="check-icon">📋</span>
+                        <span>Required Fields</span>
+                    </div>
+                </div>
+            </div>
+
+            <label class="checkbox-label">
+                <input type="checkbox" id="voice-narration" checked>
+                <span>🔊 Enable Voice Narration</span>
+            </label>
+
+            <button id="validate-button" class="btn btn-primary btn-large" onclick="startValidation()" disabled>
+                Validate Records
+            </button>
+        </div>
+
+        <!-- Progress Section -->
+        <div id="progress-section" class="card" style="display: none;">
+            <h2>Validation in Progress</h2>
+            <div class="progress-bar">
+                <div id="progress-fill" class="progress-fill"></div>
+            </div>
+            <p id="progress-text" class="progress-text">Uploading patient records...</p>
+
+            <div id="voice-status" class="voice-status" style="display: none;">
+                <span class="voice-icon">🔊</span>
+                <span id="voice-text">Preparing to validate...</span>
+            </div>
+
+            <div class="validation-stats">
+                <div class="stat">
+                    <span class="stat-label">Records Processed:</span>
+                    <span id="records-processed" class="stat-value">0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Violations Found:</span>
+                    <span id="violations-found" class="stat-value">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results-section" class="card" style="display: none;">
+            <h2>Validation Results</h2>
+
+            <!-- Summary Cards -->
+            <div class="results-summary">
+                <div class="result-card">
+                    <div class="result-icon">📊</div>
+                    <h3 id="total-records">0</h3>
+                    <p>Total Records</p>
+                </div>
+
+                <div class="result-card success">
+                    <div class="result-icon">✅</div>
+                    <h3 id="compliant-records">0</h3>
+                    <p>Compliant</p>
+                </div>
+
+                <div class="result-card warning">
+                    <div class="result-icon">⚠️</div>
+                    <h3 id="violation-records">0</h3>
+                    <p>With Violations</p>
+                </div>
+
+                <div class="result-card">
+                    <div class="result-icon">📈</div>
+                    <h3 id="compliance-rate">0%</h3>
+                    <p>Compliance Rate</p>
+                </div>
+            </div>
+
+            <!-- Violation Breakdown -->
+            <div class="violation-breakdown">
+                <h3>Violation Breakdown</h3>
+                <div id="violation-categories" class="violation-categories">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Voice Briefing -->
+            <div class="voice-briefing">
+                <h3>Executive Briefing</h3>
+                <button class="btn btn-primary" onclick="generateVoiceBriefing()">
+                    🔊 Generate Voice Summary
+                </button>
+                <audio id="audio-player" controls style="display: none; width: 100%; margin-top: 10px;"></audio>
+            </div>
+
+            <!-- Violation Details -->
+            <div class="violations-section">
+                <h3>Violation Details</h3>
+                <div class="violations-filter">
+                    <button class="filter-btn active" onclick="filterViolations('all')">All Types</button>
+                    <button class="filter-btn" onclick="filterViolations('encryption')">Encryption</button>
+                    <button class="filter-btn" onclick="filterViolations('consent')">Consent</button>
+                    <button class="filter-btn" onclick="filterViolations('access')">Access Logs</button>
+                    <button class="filter-btn" onclick="filterViolations('retention')">Retention</button>
+                </div>
+
+                <div id="violations-list" class="violations-list data-violations">
+                    <!-- Violations will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="results-actions">
+                <button class="btn btn-primary" onclick="downloadReport()">📥 Download Validation Report</button>
+                <button class="btn btn-secondary" onclick="exportViolations()">📋 Export Violation List</button>
+                <button class="btn btn-secondary" onclick="validateAnother()">🔄 Validate Another File</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+    <script>
+        let uploadedFile = null;
+        let validationResults = null;
+
+        // Drag and drop handlers
+        const uploadZone = document.getElementById('upload-zone');
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('drag-over');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('drag-over');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        }
+
+        function handleFile(file) {
+            if (!file.name.endsWith('.csv')) {
+                alert('Please upload a CSV file');
+                return;
+            }
+
+            if (file.size > 50 * 1024 * 1024) {
+                alert('File size exceeds 50MB limit');
+                return;
+            }
+
+            uploadedFile = file;
+            document.getElementById('file-name').textContent = file.name;
+            document.getElementById('file-size').textContent = formatFileSize(file.size);
+            document.getElementById('file-info').style.display = 'flex';
+            document.getElementById('validate-button').disabled = false;
+        }
+
+        function clearFile() {
+            uploadedFile = null;
+            document.getElementById('file-input').value = '';
+            document.getElementById('file-info').style.display = 'none';
+            document.getElementById('validate-button').disabled = true;
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+
+        async function startValidation() {
+            if (!uploadedFile) return;
+
+            // Hide upload, show progress
+            document.querySelector('.upload-section').style.display = 'none';
+            document.getElementById('progress-section').style.display = 'block';
+            document.getElementById('results-section').style.display = 'none';
+
+            const voiceEnabled = document.getElementById('voice-narration').checked;
+            if (voiceEnabled) {
+                document.getElementById('voice-status').style.display = 'flex';
+            }
+
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('file', uploadedFile);
+
+            try {
+                await updateProgress(20, 'Uploading records...', 'Uploading patient records to secure server');
+
+                // Make API call
+                const response = await fetch('/api/validate-records', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                await updateProgress(50, 'Parsing CSV...', 'Reading and parsing patient data');
+                await updateProgress(70, 'Validating records...', 'Checking HIPAA compliance requirements');
+
+                const data = await response.json();
+
+                await updateProgress(100, 'Complete!', 'Validation complete. Generating report');
+
+                // Display results
+                displayResults(data.report || data);
+
+            } catch (error) {
+                console.error('Validation failed:', error);
+                alert('Validation failed. Please try again.');
+                validateAnother();
+            }
+        }
+
+        async function updateProgress(percent, text, voiceText) {
+            document.getElementById('progress-fill').style.width = percent + '%';
+            document.getElementById('progress-text').textContent = text;
+
+            if (document.getElementById('voice-narration').checked) {
+                document.getElementById('voice-text').textContent = voiceText;
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
+        function displayResults(data) {
+            validationResults = data;
+
+            // Hide progress, show results
+            document.getElementById('progress-section').style.display = 'none';
+            document.getElementById('results-section').style.display = 'block';
+
+            // Calculate stats
+            const totalRecords = data.total_records || 0;
+            const violationCount = data.violations ? data.violations.length : 0;
+            const compliantRecords = totalRecords - violationCount;
+            const complianceRate = totalRecords > 0 ? ((compliantRecords / totalRecords) * 100).toFixed(1) : 0;
+
+            // Populate summary
+            document.getElementById('total-records').textContent = totalRecords.toLocaleString();
+            document.getElementById('compliant-records').textContent = compliantRecords.toLocaleString();
+            document.getElementById('violation-records').textContent = violationCount.toLocaleString();
+            document.getElementById('compliance-rate').textContent = complianceRate + '%';
+
+            // Populate violation categories
+            const categories = {};
+            if (data.violations) {
+                data.violations.forEach(v => {
+                    const type = v.violation_type || 'Other';
+                    categories[type] = (categories[type] || 0) + 1;
+                });
+            }
+
+            const categoriesDiv = document.getElementById('violation-categories');
+            categoriesDiv.innerHTML = '';
+            Object.keys(categories).forEach(type => {
+                const div = document.createElement('div');
+                div.className = 'category-item';
+                div.innerHTML = `
+                    <span class="category-name">${type}</span>
+                    <span class="category-count">${categories[type]}</span>
+                `;
+                categoriesDiv.appendChild(div);
+            });
+
+            // Populate violations list
+            const violationsList = document.getElementById('violations-list');
+            violationsList.innerHTML = '';
+
+            if (data.violations && data.violations.length > 0) {
+                data.violations.forEach(violation => {
+                    const item = createViolationItem(violation);
+                    violationsList.appendChild(item);
+                });
+            } else {
+                violationsList.innerHTML = '<div class="no-violations">✅ All records are compliant!</div>';
+            }
+        }
+
+        function createViolationItem(violation) {
+            const div = document.createElement('div');
+            div.className = 'violation-item data-violation';
+            div.setAttribute('data-type', violation.violation_type || 'other');
+
+            const patientId = violation.patient_id || violation.record_id || 'Unknown';
+            const description = violation.description || violation.message || 'Compliance violation detected';
+
+            div.innerHTML = `
+                <div class="violation-header">
+                    <span class="violation-type-badge">${violation.violation_type || 'Violation'}</span>
+                    <h4>Patient ${patientId}</h4>
+                </div>
+                <p class="violation-message">${description}</p>
+                <details class="violation-details">
+                    <summary>View Details</summary>
+                    <div class="violation-content">
+                        <p><strong>Violation Type:</strong> ${violation.violation_type || 'Not specified'}</p>
+                        <p><strong>Field:</strong> ${violation.field || 'Multiple fields'}</p>
+                        <p><strong>Current Value:</strong> <code>${violation.current_value || 'N/A'}</code></p>
+                        <p><strong>Required:</strong> ${violation.required_value || violation.requirement || 'See HIPAA guidelines'}</p>
+                        <p><strong>Regulation:</strong> ${violation.regulation || 'HIPAA Privacy Rule'}</p>
+                    </div>
+                </details>
+            `;
+
+            return div;
+        }
+
+        function filterViolations(type) {
+            const items = document.querySelectorAll('.data-violation');
+            const buttons = document.querySelectorAll('.violations-filter .filter-btn');
+
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            items.forEach(item => {
+                if (type === 'all' || item.getAttribute('data-type') === type) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        async function generateVoiceBriefing() {
+            if (!validationResults) return;
+
+            try {
+                const response = await fetch('/api/voice-briefing', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(validationResults)
+                });
+
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+
+                const audioPlayer = document.getElementById('audio-player');
+                audioPlayer.src = url;
+                audioPlayer.style.display = 'block';
+                audioPlayer.play();
+
+            } catch (error) {
+                console.error('Voice briefing failed:', error);
+                alert('Failed to generate voice briefing');
+            }
+        }
+
+        function downloadReport() {
+            alert('Report download coming soon!');
+        }
+
+        function exportViolations() {
+            alert('Export coming soon!');
+        }
+
+        function validateAnother() {
+            document.querySelector('.upload-section').style.display = 'block';
+            document.getElementById('progress-section').style.display = 'none';
+            document.getElementById('results-section').style.display = 'none';
+            clearFile();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RegWatch - Automated Compliance Monitoring</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="logo">RegWatch</h1>
+            <div class="nav-links">
+                <a href="/" class="active">Dashboard</a>
+                <a href="/scan">Code Scan</a>
+                <a href="/validate">Data Validation</a>
+                <a href="/history">Change History</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Configuration Panel -->
+        <div class="config-panel">
+            <div class="config-section">
+                <label for="regulation-selector">Active Regulation:</label>
+                <select id="regulation-selector" onchange="switchRegulation()">
+                    <option value="hipaa" selected>HIPAA Healthcare</option>
+                    <option value="gdpr">GDPR Privacy (Coming Soon)</option>
+                    <option value="sox">SOX Finance (Coming Soon)</option>
+                    <option value="pci-dss">PCI-DSS Payment (Coming Soon)</option>
+                </select>
+            </div>
+
+            <div class="config-section">
+                <label for="permission-mode">Permission Mode:</label>
+                <select id="permission-mode" onchange="updatePermissionMode()">
+                    <option value="request_approval" selected>Request Approval (Create PR)</option>
+                    <option value="auto_apply">Auto-Apply (Trusted)</option>
+                    <option value="notify_only">Notify Only (No Changes)</option>
+                </select>
+                <span class="info-tooltip" title="Controls how RegWatch handles compliance fixes">ⓘ</span>
+            </div>
+        </div>
+
+        <!-- Compliance Overview -->
+        <div class="overview-grid">
+            <div class="card stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-content">
+                    <h3 id="compliance-score">--</h3>
+                    <p>Compliance Score</p>
+                </div>
+            </div>
+
+            <div class="card stat-card">
+                <div class="stat-icon">⚠️</div>
+                <div class="stat-content">
+                    <h3 id="active-issues">--</h3>
+                    <p>Active Issues</p>
+                </div>
+            </div>
+
+            <div class="card stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-content">
+                    <h3 id="fine-exposure">$--</h3>
+                    <p>Fine Exposure</p>
+                </div>
+            </div>
+
+            <div class="card stat-card">
+                <div class="stat-icon">✅</div>
+                <div class="stat-content">
+                    <h3 id="fixed-issues">--</h3>
+                    <p>Auto-Fixed (24h)</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Agent Activity Feed -->
+        <div class="card agent-activity">
+            <h2>Agent Activity & Change Logs</h2>
+            <div class="activity-filter">
+                <button class="filter-btn active" onclick="filterActivity('all')">All</button>
+                <button class="filter-btn" onclick="filterActivity('scraper')">Scraper</button>
+                <button class="filter-btn" onclick="filterActivity('analysis')">Analysis</button>
+                <button class="filter-btn" onclick="filterActivity('impact')">Impact</button>
+                <button class="filter-btn" onclick="filterActivity('remediation')">Remediation</button>
+            </div>
+
+            <div id="activity-feed" class="activity-feed">
+                <!-- Activity items will be populated by JavaScript -->
+                <div class="activity-item" data-agent="scraper">
+                    <div class="activity-icon scraper">🔍</div>
+                    <div class="activity-content">
+                        <div class="activity-header">
+                            <strong>Scraper Agent</strong>
+                            <span class="timestamp">2 hours ago</span>
+                        </div>
+                        <p>Detected new regulation update: HIPAA § 164.312(a)(2)(iv)</p>
+                        <details class="change-details">
+                            <summary>View Details</summary>
+                            <div class="change-content">
+                                <p><strong>Source:</strong> HHS.gov</p>
+                                <p><strong>Change Type:</strong> Encryption requirements strengthened</p>
+                                <p><strong>Old:</strong> AES-256 encryption required</p>
+                                <p><strong>New:</strong> AES-256-GCM with FIPS 140-2 certified modules required</p>
+                            </div>
+                        </details>
+                    </div>
+                </div>
+
+                <div class="activity-item" data-agent="analysis">
+                    <div class="activity-icon analysis">🔬</div>
+                    <div class="activity-content">
+                        <div class="activity-header">
+                            <strong>Analysis Agent</strong>
+                            <span class="timestamp">2 hours ago</span>
+                        </div>
+                        <p>Analyzed regulation change - Severity: <span class="badge high">HIGH</span></p>
+                        <details class="change-details">
+                            <summary>View Analysis</summary>
+                            <div class="change-content">
+                                <p><strong>Affected Modules:</strong> hipaa_encryption_checker</p>
+                                <p><strong>Impact Level:</strong> Moderate - requires code update</p>
+                                <p><strong>Customer Impact:</strong> 3 codebases require updates</p>
+                                <p><strong>Estimated Fix Time:</strong> Low complexity</p>
+                            </div>
+                        </details>
+                    </div>
+                </div>
+
+                <div class="activity-item" data-agent="impact">
+                    <div class="activity-icon impact">🎯</div>
+                    <div class="activity-content">
+                        <div class="activity-header">
+                            <strong>Impact Agent</strong>
+                            <span class="timestamp">1 hour ago</span>
+                        </div>
+                        <p>Scanned 3 customer codebases - 2 violations found</p>
+                        <details class="change-details">
+                            <summary>View Impact Report</summary>
+                            <div class="change-content">
+                                <p><strong>St. Mary's Hospital:</strong> ❌ Using AES-256-CBC (needs GCM mode)</p>
+                                <p><strong>Memorial Hospital:</strong> ✅ Already compliant</p>
+                                <p><strong>Community Health:</strong> ❌ Using non-FIPS certified module</p>
+                                <p><strong>Risk:</strong> $50,000 - $250,000 per violation</p>
+                            </div>
+                        </details>
+                    </div>
+                </div>
+
+                <div class="activity-item" data-agent="remediation">
+                    <div class="activity-icon remediation">🔧</div>
+                    <div class="activity-content">
+                        <div class="activity-header">
+                            <strong>Remediation Agent</strong>
+                            <span class="timestamp">30 minutes ago</span>
+                        </div>
+                        <p>Updated prompt and regenerated compliance checker</p>
+                        <details class="change-details">
+                            <summary>View Changes Made</summary>
+                            <div class="change-content">
+                                <p><strong>Prompt Updated:</strong> prompts/hipaa_encryption_python.prompt</p>
+                                <pre class="code-diff">
+- Algorithm: AES-256
++ Algorithm: AES-256-GCM
++ Validation: FIPS 140-2 certified modules only</pre>
+                                <p><strong>Regenerated Code:</strong> src/checkers/hipaa_encryption_checker.py</p>
+                                <pre class="code-diff">
+def check_encryption_algorithm(config):
+-    return config.get('algorithm') in ['AES-256', 'AES-512']
++    algo = config.get('algorithm')
++    fips_certified = config.get('fips_140_2_certified', False)
++    return algo in ['AES-256-GCM', 'AES-512-GCM'] and fips_certified</pre>
+                                <p><strong>Tests Updated:</strong> 47 tests → 51 tests (4 new tests added)</p>
+                                <p><strong>PR Created:</strong> <a href="https://github.com/abhinavballa/RegWatch/pull/247" target="_blank">#247</a></p>
+                            </div>
+                        </details>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Issues Dashboard -->
+        <div class="card issues-dashboard">
+            <h2>Compliance Issues</h2>
+            <div class="issues-filter">
+                <button class="filter-btn active" onclick="filterIssues('all')">All Issues</button>
+                <button class="filter-btn" onclick="filterIssues('fixable')">Auto-Fixable</button>
+                <button class="filter-btn" onclick="filterIssues('manual')">Requires Manual Fix</button>
+            </div>
+
+            <div id="issues-list" class="issues-list">
+                <!-- Auto-fixable issue with PR -->
+                <div class="issue-item fixable" data-type="fixable">
+                    <div class="issue-header">
+                        <div class="issue-title">
+                            <span class="severity-badge critical">CRITICAL</span>
+                            <h3>Unencrypted PHI in Database Connection</h3>
+                        </div>
+                        <div class="issue-status">
+                            <span class="status-badge pr">PR Ready</span>
+                        </div>
+                    </div>
+                    <p class="issue-description">
+                        Database connection in <code>patient_api.py:47</code> is not using encryption.
+                        Violates HIPAA § 164.312(a)(2)(iv).
+                    </p>
+                    <div class="issue-meta">
+                        <span>📍 St. Mary's Hospital</span>
+                        <span>💰 Fine: $50,000 - $250,000</span>
+                        <span>⏱️ Detected: 30 min ago</span>
+                    </div>
+                    <div class="issue-actions">
+                        <a href="https://github.com/abhinavballa/RegWatch/pull/248" class="btn btn-primary" target="_blank">
+                            View Pull Request
+                        </a>
+                        <button class="btn btn-secondary" onclick="viewDiff(248)">View Changes</button>
+                    </div>
+                    <!-- Hover tooltip -->
+                    <div class="issue-hover-info">
+                        <strong>✅ Auto-fixable</strong>
+                        <p>Remediation Agent has created PR #248 with:</p>
+                        <ul>
+                            <li>Updated prompt: hipaa_encryption_python.prompt</li>
+                            <li>Regenerated checker with new validation</li>
+                            <li>Code patch for patient_api.py</li>
+                            <li>All tests passing (51/51)</li>
+                        </ul>
+                        <p><a href="https://github.com/abhinavballa/RegWatch/pull/248">Click to review and merge</a></p>
+                    </div>
+                </div>
+
+                <!-- Manual fix required issue -->
+                <div class="issue-item manual" data-type="manual">
+                    <div class="issue-header">
+                        <div class="issue-title">
+                            <span class="severity-badge high">HIGH</span>
+                            <h3>Complex Authentication Flow Requires Custom Implementation</h3>
+                        </div>
+                        <div class="issue-status">
+                            <span class="status-badge issue">Git Issue</span>
+                        </div>
+                    </div>
+                    <p class="issue-description">
+                        Multi-tenant authentication in <code>auth_service.py</code> needs custom role-based
+                        access control. Automated fix may break existing functionality.
+                    </p>
+                    <div class="issue-meta">
+                        <span>📍 Community Health</span>
+                        <span>💰 Fine: $10,000 - $100,000</span>
+                        <span>⏱️ Detected: 1 hour ago</span>
+                    </div>
+                    <div class="issue-actions">
+                        <a href="https://github.com/abhinavballa/RegWatch/issues/142" class="btn btn-warning" target="_blank">
+                            View Git Issue
+                        </a>
+                        <button class="btn btn-secondary" onclick="viewGuidance(142)">View Fix Guidance</button>
+                    </div>
+                    <!-- Hover tooltip -->
+                    <div class="issue-hover-info">
+                        <strong>⚠️ Manual fix required</strong>
+                        <p>Issue too complex for automated remediation. Git Issue #142 provides:</p>
+                        <ul>
+                            <li>Detailed problem description</li>
+                            <li>Required changes to meet compliance</li>
+                            <li>Impact on current codebase</li>
+                            <li>Step-by-step remediation guide</li>
+                            <li>Testing requirements</li>
+                        </ul>
+                        <p><a href="https://github.com/abhinavballa/RegWatch/issues/142">Click to view full guidance</a></p>
+                    </div>
+                </div>
+
+                <!-- Another auto-fixable issue -->
+                <div class="issue-item fixable" data-type="fixable">
+                    <div class="issue-header">
+                        <div class="issue-title">
+                            <span class="severity-badge high">HIGH</span>
+                            <h3>Missing Audit Log for PHI Access</h3>
+                        </div>
+                        <div class="issue-status">
+                            <span class="status-badge pr">PR Ready</span>
+                        </div>
+                    </div>
+                    <p class="issue-description">
+                        Patient record access in <code>records_controller.py:112</code> not logging to audit trail.
+                        Violates HIPAA § 164.312(b).
+                    </p>
+                    <div class="issue-meta">
+                        <span>📍 St. Mary's Hospital</span>
+                        <span>💰 Fine: $10,000 - $100,000</span>
+                        <span>⏱️ Detected: 45 min ago</span>
+                    </div>
+                    <div class="issue-actions">
+                        <a href="https://github.com/abhinavballa/RegWatch/pull/249" class="btn btn-primary" target="_blank">
+                            View Pull Request
+                        </a>
+                        <button class="btn btn-secondary" onclick="viewDiff(249)">View Changes</button>
+                    </div>
+                </div>
+
+                <!-- Regulation update issue -->
+                <div class="issue-item fixable" data-type="fixable">
+                    <div class="issue-header">
+                        <div class="issue-title">
+                            <span class="severity-badge medium">MEDIUM</span>
+                            <h3>New HIPAA Encryption Standard - Update Required</h3>
+                        </div>
+                        <div class="issue-status">
+                            <span class="status-badge pr">PR Ready</span>
+                        </div>
+                    </div>
+                    <p class="issue-description">
+                        HHS updated encryption requirements (Jan 31, 2026). Current implementation uses
+                        AES-256-CBC, but FIPS 140-2 certified AES-256-GCM is now required.
+                    </p>
+                    <div class="issue-meta">
+                        <span>📍 All Codebases</span>
+                        <span>💰 Potential Fine: $50,000+</span>
+                        <span>⏱️ Policy Updated: 2 hours ago</span>
+                    </div>
+                    <div class="issue-actions">
+                        <a href="https://github.com/abhinavballa/RegWatch/pull/247" class="btn btn-primary" target="_blank">
+                            View Pull Request
+                        </a>
+                        <button class="btn btn-secondary" onclick="viewRegulationChange()">View Policy Change</button>
+                    </div>
+                    <!-- Hover tooltip -->
+                    <div class="issue-hover-info">
+                        <strong>🔄 Regulation Update Detected</strong>
+                        <p>Scraper Agent detected policy change. PR #247 includes:</p>
+                        <ul>
+                            <li>Updated regulation text in prompt</li>
+                            <li>Regenerated hipaa_encryption_checker.py</li>
+                            <li>Re-scanned all codebases with new requirements</li>
+                            <li>Code patches for affected systems</li>
+                            <li>Tests updated (47 → 51 tests)</li>
+                        </ul>
+                        <p><strong>Policy Change:</strong> AES-256 → AES-256-GCM + FIPS 140-2</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <a href="/scan" class="action-card">
+                <div class="action-icon">📦</div>
+                <h3>Scan Codebase</h3>
+                <p>Upload ZIP file for compliance analysis</p>
+            </a>
+
+            <a href="/validate" class="action-card">
+                <div class="action-icon">📊</div>
+                <h3>Validate Data</h3>
+                <p>Check patient records for HIPAA compliance</p>
+            </a>
+
+            <a href="/history" class="action-card">
+                <div class="action-icon">📜</div>
+                <h3>View History</h3>
+                <p>Review regulation changes and audit trail</p>
+            </a>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+</body>
+</html>

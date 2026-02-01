@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Compliance Scan - RegWatch</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="logo">RegWatch</h1>
+            <div class="nav-links">
+                <a href="/">Dashboard</a>
+                <a href="/scan" class="active">Code Scan</a>
+                <a href="/validate">Data Validation</a>
+                <a href="/history">Change History</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Code Compliance Scan</h1>
+            <p>Upload your codebase to check for HIPAA compliance violations</p>
+        </div>
+
+        <!-- Upload Section -->
+        <div class="card upload-section">
+            <h2>Upload Codebase</h2>
+            <div class="upload-zone" id="upload-zone">
+                <div class="upload-icon">📦</div>
+                <p class="upload-text">Drag and drop your codebase ZIP file here</p>
+                <p class="upload-subtext">or</p>
+                <label for="file-input" class="btn btn-primary">Browse Files</label>
+                <input type="file" id="file-input" accept=".zip" style="display: none;" onchange="handleFileSelect(event)">
+                <p class="upload-hint">Maximum file size: 100MB</p>
+            </div>
+
+            <div id="file-info" class="file-info" style="display: none;">
+                <div class="file-details">
+                    <span class="file-icon">📄</span>
+                    <span id="file-name"></span>
+                    <span id="file-size"></span>
+                </div>
+                <button class="btn btn-danger btn-sm" onclick="clearFile()">Remove</button>
+            </div>
+
+            <div class="scan-options">
+                <h3>Scan Options</h3>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="check-encryption" checked>
+                    <span>HIPAA Encryption (§ 164.312(a)(2)(iv))</span>
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="check-access" checked>
+                    <span>HIPAA Access Control (§ 164.312(a)(1))</span>
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="check-audit" checked>
+                    <span>HIPAA Audit Logging (§ 164.312(b))</span>
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="voice-narration" checked>
+                    <span>🔊 Enable Voice Narration</span>
+                </label>
+            </div>
+
+            <button id="scan-button" class="btn btn-primary btn-large" onclick="startScan()" disabled>
+                Start Compliance Scan
+            </button>
+        </div>
+
+        <!-- Progress Section -->
+        <div id="progress-section" class="card" style="display: none;">
+            <h2>Scanning in Progress</h2>
+            <div class="progress-bar">
+                <div id="progress-fill" class="progress-fill"></div>
+            </div>
+            <p id="progress-text" class="progress-text">Uploading codebase...</p>
+
+            <div id="voice-status" class="voice-status" style="display: none;">
+                <span class="voice-icon">🔊</span>
+                <span id="voice-text">Preparing to scan...</span>
+            </div>
+
+            <div class="scan-steps">
+                <div class="scan-step" id="step-upload">
+                    <span class="step-icon">⏳</span>
+                    <span>Uploading codebase</span>
+                </div>
+                <div class="scan-step" id="step-extract">
+                    <span class="step-icon">⏳</span>
+                    <span>Extracting files</span>
+                </div>
+                <div class="scan-step" id="step-encryption">
+                    <span class="step-icon">⏳</span>
+                    <span>Checking encryption compliance</span>
+                </div>
+                <div class="scan-step" id="step-access">
+                    <span class="step-icon">⏳</span>
+                    <span>Checking access control</span>
+                </div>
+                <div class="scan-step" id="step-audit">
+                    <span class="step-icon">⏳</span>
+                    <span>Checking audit logging</span>
+                </div>
+                <div class="scan-step" id="step-report">
+                    <span class="step-icon">⏳</span>
+                    <span>Generating report</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results-section" class="card" style="display: none;">
+            <h2>Scan Results</h2>
+
+            <!-- Summary Cards -->
+            <div class="results-summary">
+                <div class="result-card score-card">
+                    <h3 id="result-score">--</h3>
+                    <p>Compliance Score</p>
+                    <div id="score-indicator" class="score-indicator"></div>
+                </div>
+
+                <div class="result-card">
+                    <div class="result-icon critical">⚠️</div>
+                    <h3 id="critical-count">0</h3>
+                    <p>Critical Issues</p>
+                </div>
+
+                <div class="result-card">
+                    <div class="result-icon high">⚡</div>
+                    <h3 id="high-count">0</h3>
+                    <p>High Priority</p>
+                </div>
+
+                <div class="result-card">
+                    <div class="result-icon medium">⚠️</div>
+                    <h3 id="medium-count">0</h3>
+                    <p>Medium Priority</p>
+                </div>
+
+                <div class="result-card">
+                    <div class="result-icon low">ℹ️</div>
+                    <h3 id="low-count">0</h3>
+                    <p>Low Priority</p>
+                </div>
+            </div>
+
+            <!-- Fine Exposure -->
+            <div class="fine-exposure">
+                <h3>Estimated Fine Exposure</h3>
+                <div class="fine-amount" id="fine-amount">$0</div>
+                <p class="fine-note">Based on HHS OCR enforcement precedents</p>
+            </div>
+
+            <!-- Voice Briefing -->
+            <div class="voice-briefing">
+                <h3>Executive Briefing</h3>
+                <button class="btn btn-primary" onclick="generateVoiceBriefing()">
+                    🔊 Generate Voice Summary
+                </button>
+                <audio id="audio-player" controls style="display: none; width: 100%; margin-top: 10px;"></audio>
+            </div>
+
+            <!-- Violations List -->
+            <div class="violations-section">
+                <h3>Violations Detected</h3>
+                <div class="violations-filter">
+                    <button class="filter-btn active" onclick="filterViolations('all')">All</button>
+                    <button class="filter-btn" onclick="filterViolations('critical')">Critical</button>
+                    <button class="filter-btn" onclick="filterViolations('high')">High</button>
+                    <button class="filter-btn" onclick="filterViolations('medium')">Medium</button>
+                    <button class="filter-btn" onclick="filterViolations('low')">Low</button>
+                </div>
+
+                <div id="violations-list" class="violations-list">
+                    <!-- Violations will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="results-actions">
+                <button class="btn btn-primary" onclick="downloadReport()">📥 Download PDF Report</button>
+                <button class="btn btn-secondary" onclick="exportChecklist()">📋 Export Remediation Checklist</button>
+                <button class="btn btn-secondary" onclick="scanAnother()">🔄 Scan Another Codebase</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+    <script>
+        let uploadedFile = null;
+        let scanResults = null;
+
+        // Drag and drop handlers
+        const uploadZone = document.getElementById('upload-zone');
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('drag-over');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('drag-over');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        }
+
+        function handleFile(file) {
+            if (!file.name.endsWith('.zip')) {
+                alert('Please upload a ZIP file');
+                return;
+            }
+
+            if (file.size > 100 * 1024 * 1024) {
+                alert('File size exceeds 100MB limit');
+                return;
+            }
+
+            uploadedFile = file;
+            document.getElementById('file-name').textContent = file.name;
+            document.getElementById('file-size').textContent = formatFileSize(file.size);
+            document.getElementById('file-info').style.display = 'flex';
+            document.getElementById('scan-button').disabled = false;
+        }
+
+        function clearFile() {
+            uploadedFile = null;
+            document.getElementById('file-input').value = '';
+            document.getElementById('file-info').style.display = 'none';
+            document.getElementById('scan-button').disabled = true;
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+
+        async function startScan() {
+            if (!uploadedFile) return;
+
+            // Hide upload, show progress
+            document.querySelector('.upload-section').style.display = 'none';
+            document.getElementById('progress-section').style.display = 'block';
+            document.getElementById('results-section').style.display = 'none';
+
+            const voiceEnabled = document.getElementById('voice-narration').checked;
+            if (voiceEnabled) {
+                document.getElementById('voice-status').style.display = 'flex';
+            }
+
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('file', uploadedFile);
+
+            try {
+                // Simulate progress steps
+                await updateProgress(10, 'Uploading codebase...', 'Uploading codebase to secure server', 'upload');
+                await updateProgress(20, 'Extracting files...', 'Extracting and analyzing file structure', 'extract');
+
+                // Make API call
+                const response = await fetch('/api/scan', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                await updateProgress(40, 'Checking encryption...', 'Scanning for encryption compliance violations', 'encryption');
+                await updateProgress(60, 'Checking access control...', 'Analyzing authentication and authorization', 'access');
+                await updateProgress(80, 'Checking audit logging...', 'Validating audit trail requirements', 'audit');
+
+                const data = await response.json();
+
+                await updateProgress(100, 'Generating report...', 'Compliance scan complete. Generating detailed report', 'report');
+
+                // Display results
+                displayResults(data);
+
+            } catch (error) {
+                console.error('Scan failed:', error);
+                alert('Scan failed. Please try again.');
+                scanAnother();
+            }
+        }
+
+        async function updateProgress(percent, text, voiceText, step) {
+            document.getElementById('progress-fill').style.width = percent + '%';
+            document.getElementById('progress-text').textContent = text;
+
+            if (document.getElementById('voice-narration').checked) {
+                document.getElementById('voice-text').textContent = voiceText;
+            }
+
+            // Update step status
+            const stepElement = document.getElementById('step-' + step);
+            if (stepElement) {
+                stepElement.querySelector('.step-icon').textContent = '✅';
+                stepElement.classList.add('completed');
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 800));
+        }
+
+        function displayResults(data) {
+            scanResults = data;
+
+            // Hide progress, show results
+            document.getElementById('progress-section').style.display = 'none';
+            document.getElementById('results-section').style.display = 'block';
+
+            // Populate summary
+            document.getElementById('result-score').textContent = data.compliance_score + '/100';
+            document.getElementById('critical-count').textContent = data.severity_breakdown.critical || 0;
+            document.getElementById('high-count').textContent = data.severity_breakdown.high || 0;
+            document.getElementById('medium-count').textContent = data.severity_breakdown.medium || 0;
+            document.getElementById('low-count').textContent = data.severity_breakdown.low || 0;
+            document.getElementById('fine-amount').textContent = '$' + data.estimated_fine_exposure.toLocaleString();
+
+            // Score indicator
+            const scoreIndicator = document.getElementById('score-indicator');
+            if (data.compliance_score >= 90) {
+                scoreIndicator.className = 'score-indicator good';
+            } else if (data.compliance_score >= 70) {
+                scoreIndicator.className = 'score-indicator medium';
+            } else {
+                scoreIndicator.className = 'score-indicator poor';
+            }
+
+            // Populate violations
+            const violationsList = document.getElementById('violations-list');
+            violationsList.innerHTML = '';
+
+            if (data.violations && data.violations.length > 0) {
+                data.violations.forEach(violation => {
+                    const item = createViolationItem(violation);
+                    violationsList.appendChild(item);
+                });
+            } else {
+                violationsList.innerHTML = '<div class="no-violations">✅ No violations detected. Your codebase is compliant!</div>';
+            }
+        }
+
+        function createViolationItem(violation) {
+            const div = document.createElement('div');
+            div.className = 'violation-item';
+            div.setAttribute('data-severity', violation.severity.toLowerCase());
+
+            div.innerHTML = `
+                <div class="violation-header">
+                    <span class="severity-badge ${violation.severity.toLowerCase()}">${violation.severity}</span>
+                    <h4>${violation.title || violation.message}</h4>
+                </div>
+                <p class="violation-message">${violation.message}</p>
+                <div class="violation-location">
+                    <code>${violation.file}:${violation.line || '?'}</code>
+                </div>
+                <details class="violation-details">
+                    <summary>View Details & Remediation</summary>
+                    <div class="violation-content">
+                        <p><strong>Regulation:</strong> ${violation.regulation || 'HIPAA § 164.312'}</p>
+                        <p><strong>Description:</strong> ${violation.description || violation.message}</p>
+                        ${violation.code_snippet ? `<pre class="code-snippet">${escapeHtml(violation.code_snippet)}</pre>` : ''}
+                        <p><strong>Remediation:</strong> ${violation.remediation || 'Update code to meet HIPAA requirements'}</p>
+                        <p><strong>Fine Range:</strong> $${violation.fine_min || 100} - $${violation.fine_max || 50000}</p>
+                    </div>
+                </details>
+            `;
+
+            return div;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function filterViolations(severity) {
+            const items = document.querySelectorAll('.violation-item');
+            const buttons = document.querySelectorAll('.violations-filter .filter-btn');
+
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            items.forEach(item => {
+                if (severity === 'all' || item.getAttribute('data-severity') === severity) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        async function generateVoiceBriefing() {
+            if (!scanResults) return;
+
+            try {
+                const response = await fetch('/api/voice-briefing', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(scanResults)
+                });
+
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+
+                const audioPlayer = document.getElementById('audio-player');
+                audioPlayer.src = url;
+                audioPlayer.style.display = 'block';
+                audioPlayer.play();
+
+            } catch (error) {
+                console.error('Voice briefing failed:', error);
+                alert('Failed to generate voice briefing');
+            }
+        }
+
+        function downloadReport() {
+            // Create downloadable PDF report
+            alert('PDF report download coming soon!');
+        }
+
+        function exportChecklist() {
+            // Export remediation checklist
+            alert('Checklist export coming soon!');
+        }
+
+        function scanAnother() {
+            document.querySelector('.upload-section').style.display = 'block';
+            document.getElementById('progress-section').style.display = 'none';
+            document.getElementById('results-section').style.display = 'none';
+            clearFile();
+        }
+    </script>
+</body>
+</html>
