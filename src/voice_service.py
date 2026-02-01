@@ -252,4 +252,4 @@ def alert(message: str) -> bytes:
         formatted_message = message
         
     # Alerts are batch mode, usually short
-    return narrate(formatted_message, stream=False)"}
+    return narrate(formatted_message, stream=False)

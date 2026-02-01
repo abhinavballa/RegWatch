@@ -1,0 +1,11 @@
+patient_id,name,ssn,ssn_encrypted,consent_date,consent_signature,withdrawal_rights_explained,last_accessed,access_logged,diagnosis,created_date,encryption_algorithm
+P-10001,Sarah Connor,ENCRYPTED,true,2024-01-15,true,true,2025-01-20,true,Diabetes Type 2,2024-01-01,AES-256-GCM
+P-10002,Kyle Reese,ENCRYPTED,true,2024-02-20,true,true,2025-01-19,true,Hypertension,2024-02-01,AES-256-GCM
+P-10003,Ellen Ripley,ENCRYPTED,true,2024-03-15,true,true,2025-01-18,true,Annual Checkup,2024-03-01,AES-256-GCM
+P-10004,Rick Deckard,ENCRYPTED,true,2024-04-10,true,true,2025-01-17,true,Flu,2024-04-01,AES-256-GCM
+P-10005,Marty McFly,ENCRYPTED,true,2024-05-05,true,true,2025-01-16,true,Sports Injury,2024-05-01,AES-256-GCM
+P-10006,Doc Brown,ENCRYPTED,true,2024-06-01,true,true,2025-01-15,true,Diabetes,2024-06-01,AES-256-GCM
+P-10007,Neo Anderson,ENCRYPTED,true,2024-07-01,true,true,2025-01-14,true,Eye Exam,2024-07-01,AES-256-GCM
+P-10008,Trinity,ENCRYPTED,true,2024-08-01,true,true,2025-01-13,true,Physical,2024-08-01,AES-256-GCM
+P-10009,Morpheus,ENCRYPTED,true,2024-09-01,true,true,2025-01-12,true,Wellness Check,2024-09-01,AES-256-GCM
+P-10010,Agent Smith,ENCRYPTED,true,2024-10-01,true,true,2025-01-11,true,Vision Test,2024-10-01,AES-256-GCM
