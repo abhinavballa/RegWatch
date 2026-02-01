@@ -36,7 +36,7 @@ Dependencies
 </impact_agent>
 
 <remediation_agent>
-  <include>../src/agents/remediation_agent.py</include>
+  <include>../src/remediation_agent.py</include>
 </remediation_agent>
 
 <pytest_fixtures_for_test_accumulation_strategy>

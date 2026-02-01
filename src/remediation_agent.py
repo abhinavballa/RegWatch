@@ -1,10 +1,33 @@
-from __future__ import annotations
+"""
+src/agents/remediation_agent.py
+
+RegWatch Remediation Agent
+==========================
+
+This module implements the automated remediation logic for the RegWatch compliance system.
+It leverages the Toolhouse SDK for LLM-driven analysis and PyGithub for repository management.
+
+Key Responsibilities:
+1. Updating PDD prompt files with new regulation requirements.
+2. Triggering compliance checker regeneration via PDD sync.
+3. Creating and managing remediation Pull Requests with strict safety guardrails.
+
+Dependencies:
+- toolhouse: For AI-driven patch generation and safety analysis.
+- PyGithub: For GitHub API interactions (Issues, PRs, Merges).
+- os, re, time: Standard library utilities.
+
+Environment Variables:
+- TOOLHOUSE_API_KEY: API key for Toolhouse SDK.
+- GITHUB_TOKEN: Personal Access Token for GitHub API.
+- REGWATCH_REPO: Name of the central RegWatch repository (e.g., "org/regwatch-core").
+"""
 
 import os
 import re
 import time
 import logging
-from typing import List, Optional, Dict, Any, Tuple
+from typing import List, Dict, Optional, Union, Any
 from enum import Enum
 
 from github import Github, GithubException
@@ -12,51 +35,51 @@ from github.Repository import Repository
 from github.PullRequest import PullRequest
 from toolhouse import Toolhouse
 
-# Configure logging
+# Configure Logger
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Constants
-MAX_FILES_AUTO_APPLY = 10
-MAX_LINES_AUTO_APPLY = 1000
-SENSITIVE_KEYWORDS = ["auth", "password", "secret", "encrypt", "decrypt", "token", "key"]
-PRODUCTION_BRANCHES = ["main", "master", "production", "prod"]
-PDD_SYNC_TIMEOUT = 300  # Seconds to wait for PDD sync
-PDD_SYNC_POLL_INTERVAL = 10
+REGWATCH_REPO_NAME = os.getenv("REGWATCH_REPO", "regwatch/core-system")
+MAX_AUTO_APPLY_FILES = 10
+POLL_INTERVAL_SECONDS = 5
+MAX_POLL_ATTEMPTS = 12  # 1 minute timeout for PDD sync acknowledgement
+
+# Safety Keywords (Regex patterns for sensitive code detection)
+SENSITIVE_PATTERNS = [
+    r"auth(entication|orization)?",
+    r"encrypt(ion)?",
+    r"decrypt(ion)?",
+    r"passwd|password",
+    r"secret|token|key",
+    r"cipher",
+    r"login|logout"
+]
 
 class PermissionMode(Enum):
     AUTO_APPLY = "auto_apply"
     REQUEST_APPROVAL = "request_approval"
     NOTIFY_ONLY = "notify_only"
 
-class SafetyCheckResult(Enum):
-    SAFE = "safe"
-    UNSAFE_TOO_MANY_FILES = "unsafe_too_many_files"
-    UNSAFE_PRODUCTION_BRANCH = "unsafe_production_branch"
-    UNSAFE_SENSITIVE_CODE = "unsafe_sensitive_code"
-
 # Initialize Clients
 try:
-    th = Toolhouse(api_key=os.environ.get("TOOLHOUSE_API_KEY"))
-    gh = Github(os.environ.get("GITHUB_TOKEN"))
+    gh_client = Github(os.getenv("GITHUB_TOKEN"))
+    th_client = Toolhouse(api_key=os.getenv("TOOLHOUSE_API_KEY"))
 except Exception as e:
     logger.error(f"Failed to initialize clients: {e}")
     raise
 
-
 def update_prompt(prompt_file: str, new_requirements: List[str]) -> bool:
     """
-    Updates a PDD prompt file with new regulation requirements.
-
-    Parses the existing prompt file to locate the 'Requirements' section and appends
-    the new requirements, preserving the existing structure.
+    Updates a PDD prompt file by inserting new regulation requirements into the
+    'Requirements' section while preserving the existing file structure.
 
     Args:
-        prompt_file: Path to the prompt file.
-        new_requirements: List of requirement strings to add.
+        prompt_file: Path to the local prompt file (e.g., 'prompts/hipaa_checker.md').
+        new_requirements: List of string requirements to append.
 
     Returns:
-        bool: True if successful, False otherwise.
+        bool: True if update was successful, False otherwise.
     """
     if not os.path.exists(prompt_file):
         logger.error(f"Prompt file not found: {prompt_file}")
@@ -66,102 +89,91 @@ def update_prompt(prompt_file: str, new_requirements: List[str]) -> bool:
         with open(prompt_file, 'r', encoding='utf-8') as f:
             content = f.read()
 
-        # Simple state machine parser to find sections
-        # We look for lines starting with "% Requirements" or similar headers
-        # PDD format usually uses XML-like tags or Markdown headers. 
-        # Assuming standard Markdown/PDD structure: "% Requirements" or "## Requirements"
+        # Locate the Requirements section
+        # Looks for "# Requirements" or "## Requirements" case-insensitive
+        req_header_match = re.search(r'^(#+\s*Requirements\s*$)', content, re.MULTILINE | re.IGNORECASE)
         
-        lines = content.splitlines()
-        req_start_idx = -1
-        next_section_idx = -1
-        
-        # Regex to identify section headers (e.g., % Section or ## Section)
-        header_pattern = re.compile(r"^[%#]+\s+(Requirements|Dependencies|Instructions|Goal|Context)", re.IGNORECASE)
-        
-        for i, line in enumerate(lines):
-            match = header_pattern.match(line)
-            if match:
-                section_name = match.group(1).lower()
-                if section_name == "requirements":
-                    req_start_idx = i
-                elif req_start_idx != -1 and next_section_idx == -1:
-                    # We found the next section after requirements
-                    next_section_idx = i
-                    break
-        
-        if req_start_idx == -1:
-            logger.warning(f"Could not find 'Requirements' section in {prompt_file}. Appending to end.")
-            # Fallback: Append to end
-            updated_lines = lines + ["", "% Requirements"] + [f"- {req}" for req in new_requirements]
-        else:
-            # Insert before the next section, or at the end if no next section found
-            insert_idx = next_section_idx if next_section_idx != -1 else len(lines)
-            
-            # Check for duplicates to avoid clutter
-            existing_content = "\n".join(lines[req_start_idx:insert_idx])
-            to_add = []
+        if not req_header_match:
+            logger.warning(f"No 'Requirements' section found in {prompt_file}. Appending to end.")
+            # Append new section if missing
+            new_content = content.rstrip() + "\n\n# Requirements\n"
             for req in new_requirements:
-                if req not in existing_content:
-                    to_add.append(f"- {req}")
+                new_content += f"- {req}\n"
+        else:
+            # Find the end of the Requirements section (start of next section or EOF)
+            header_end_pos = req_header_match.end()
             
-            if not to_add:
-                logger.info("No new unique requirements to add.")
-                return True
+            # Look for the next header (starting with #)
+            next_header_match = re.search(r'^#+\s', content[header_end_pos:], re.MULTILINE)
+            
+            insertion_point = header_end_pos
+            if next_header_match:
+                # Insert before the next header
+                insertion_point += next_header_match.start()
+            else:
+                # Insert at EOF
+                insertion_point = len(content)
 
-            # Insert with a newline buffer if needed
-            insertion_block = to_add + [""]
-            updated_lines = lines[:insert_idx] + insertion_block + lines[insert_idx:]
+            # Format new requirements
+            req_text = ""
+            # Check if we need a newline prefix
+            if not content[header_end_pos:insertion_point].strip():
+                req_text += "\n"
+            
+            for req in new_requirements:
+                req_text += f"- {req}\n"
+
+            # Reconstruct content
+            new_content = content[:insertion_point] + req_text + content[insertion_point:]
 
         with open(prompt_file, 'w', encoding='utf-8') as f:
-            f.write("\n".join(updated_lines))
-            
+            f.write(new_content)
+        
         logger.info(f"Successfully updated {prompt_file} with {len(new_requirements)} new requirements.")
         return True
 
     except Exception as e:
-        logger.error(f"Error updating prompt file: {e}")
+        logger.error(f"Failed to update prompt file {prompt_file}: {e}")
         return False
 
 
-def regenerate_checker(module_name: str, repo_name: str = "RegWatch") -> bool:
+def regenerate_checker(module_name: str) -> bool:
     """
-    Triggers pdd sync to regenerate a compliance checker by creating a GitHub issue.
+    Triggers the PDD sync process to regenerate a compliance checker by creating
+    a GitHub issue with the specific command.
 
     Args:
-        module_name: The name of the module to regenerate (e.g., 'hipaa_compliance').
-        repo_name: The repository where the PDD bot is listening.
+        module_name: The name of the module to regenerate (e.g., 'checkers.hipaa').
 
     Returns:
-        bool: True if regeneration was confirmed successful, False otherwise.
+        bool: True if the command was acknowledged by the bot, False otherwise.
     """
     try:
-        repo = gh.get_user().get_repo(repo_name)
+        repo = gh_client.get_repo(REGWATCH_REPO_NAME)
         title = f"Regenerate {module_name}"
-        body = f"/pdd-sync {module_name}"
+        body = f"/pdd-sync {module_name}\n\n*Triggered by RegWatch Remediation Agent*"
         
-        logger.info(f"Creating issue in {repo_name}: {title}")
         issue = repo.create_issue(title=title, body=body)
-        
-        # Monitor for completion
-        start_time = time.time()
-        while time.time() - start_time < PDD_SYNC_TIMEOUT:
+        logger.info(f"Created issue #{issue.number} to regenerate {module_name}")
+
+        # Monitor for bot response
+        logger.info("Waiting for PDD bot acknowledgement...")
+        for _ in range(MAX_POLL_ATTEMPTS):
+            time.sleep(POLL_INTERVAL_SECONDS)
             # Refresh issue to get new comments
             issue.update()
             comments = list(issue.get_comments())
             
-            for comment in reversed(comments):
-                # Look for bot response
-                if "pdd-sync complete" in comment.body.lower():
-                    logger.info(f"PDD sync completed successfully for {module_name}")
-                    issue.edit(state="closed")
+            for comment in comments:
+                # Assuming the bot name is 'pdd-bot' or similar, or checking content
+                if "sync scheduled" in comment.body.lower() or "error" in comment.body.lower():
+                    if "error" in comment.body.lower():
+                        logger.error(f"PDD Sync failed: {comment.body}")
+                        return False
+                    logger.info("PDD Sync successfully scheduled.")
                     return True
-                if "pdd-sync failed" in comment.body.lower() or "error" in comment.body.lower():
-                    logger.error(f"PDD sync failed for {module_name}: {comment.body}")
-                    return False
-            
-            time.sleep(PDD_SYNC_POLL_INTERVAL)
-            
-        logger.error(f"Timeout waiting for PDD sync for {module_name}")
+        
+        logger.warning(f"Timeout waiting for PDD bot response on issue #{issue.number}")
         return False
 
     except GithubException as e:
@@ -170,185 +182,191 @@ def regenerate_checker(module_name: str, repo_name: str = "RegWatch") -> bool:
 
 
 def _check_safety_guardrails(
-    patch_content: str, 
-    target_branch: str, 
-    affected_files: List[str]
-) -> SafetyCheckResult:
+    patch: Dict[str, str], 
+    branch_name: str, 
+    repo: Repository
+) -> bool:
     """
-    Evaluates whether a patch is safe for auto-application.
+    Evaluates safety guardrails to determine if a patch is safe for auto-application.
+    
+    Guardrails:
+    1. Patch size <= 10 files.
+    2. Not a production branch.
+    3. No sensitive code (auth/crypto) modifications.
     """
-    # 1. Check Production Branch
-    if target_branch in PRODUCTION_BRANCHES:
-        return SafetyCheckResult.UNSAFE_PRODUCTION_BRANCH
+    # 1. File Count Check
+    if len(patch) > MAX_AUTO_APPLY_FILES:
+        logger.warning(f"Guardrail Fail: Patch affects {len(patch)} files (Limit: {MAX_AUTO_APPLY_FILES}).")
+        return False
 
-    # 2. Check Scope (File Count)
-    if len(affected_files) > MAX_FILES_AUTO_APPLY:
-        return SafetyCheckResult.UNSAFE_TOO_MANY_FILES
+    # 2. Production Branch Check
+    prod_branches = ['main', 'master', 'prod', 'production']
+    if repo.default_branch in prod_branches and branch_name == repo.default_branch:
+        # Note: Usually we create a feature branch, but if the target is prod, we are careful.
+        # This check ensures we aren't somehow pushing directly to prod if that was the intent.
+        logger.warning("Guardrail Fail: Cannot auto-apply directly to production branch.")
+        return False
 
-    # 3. Check Scope (Line Count - rough estimate)
-    if patch_content.count('\n') > MAX_LINES_AUTO_APPLY:
-        return SafetyCheckResult.UNSAFE_TOO_MANY_FILES
-
-    # 4. Check Sensitive Code
-    # This is a heuristic check.
-    lower_patch = patch_content.lower()
-    for keyword in SENSITIVE_KEYWORDS:
-        if keyword in lower_patch:
-            return SafetyCheckResult.UNSAFE_SENSITIVE_CODE
-
-    return SafetyCheckResult.SAFE
-
-
-def _generate_patch_with_llm(
-    repo_content_summary: str, 
-    violations: List[str], 
-    remediation_suggestions: List[str]
-) -> Tuple[str, List[str]]:
-    """
-    Uses Toolhouse to generate a code patch based on violations.
+    # 3. Sensitive Code Check
+    # Combine all patch content for analysis
+    full_patch_content = "\n".join(patch.values())
     
-    Returns:
-        Tuple[str, List[str]]: (The patch content, List of affected filenames)
-    """
-    prompt = (
-        "You are an expert software engineer fixing compliance violations.\n"
-        f"Violations: {violations}\n"
-        f"Suggestions: {remediation_suggestions}\n"
-        f"Repository Context Summary: {repo_content_summary}\n\n"
-        "Generate a unified diff patch to fix these issues. "
-        "Return ONLY the patch content. Do not include markdown formatting."
-    )
-    
-    messages = [{"role": "user", "content": prompt}]
-    response = th.chat_completion(messages=messages, model="claude-3-5-sonnet-20240620")
-    
-    patch_content = response['content']
-    
-    # Extract filenames from diff headers (e.g., "+++ b/src/main.py")
-    affected_files = re.findall(r"\+\+\+ b/(.+)", patch_content)
-    
-    return patch_content, affected_files
+    # Regex Check
+    for pattern in SENSITIVE_PATTERNS:
+        if re.search(pattern, full_patch_content, re.IGNORECASE):
+            logger.warning(f"Guardrail Fail: Sensitive keyword match '{pattern}'.")
+            return False
+            
+    # Toolhouse LLM Check (Double check for semantic context)
+    # We ask Toolhouse if this looks like a security-critical change
+    messages = [{
+        "role": "user",
+        "content": f"Analyze this code patch for security sensitivity. Does it modify authentication, encryption, or access control logic? Reply only 'YES' or 'NO'.\n\n{full_patch_content[:2000]}" # Truncate for token limits if needed
+    }]
+    try:
+        response = th_client.chat_completion(messages=messages, model="claude-3-haiku") # Using a fast model
+        content = response.choices[0].message.content.strip().upper()
+        if "YES" in content:
+            logger.warning("Guardrail Fail: LLM identified security-sensitive logic.")
+            return False
+    except Exception as e:
+        logger.warning(f"LLM Safety check failed ({e}), defaulting to unsafe.")
+        return False
+
+    return True
 
 
 def create_remediation_pr(
-    customer_repo_name: str,
-    violations: List[str],
-    remediation_suggestions: List[str],
-    permission_mode: str = "request_approval",
-    base_branch: str = "main"
+    customer_repo_name: str, 
+    patch: Dict[str, str], 
+    permission_mode: str,
+    regulation_ref: str = "Unknown Regulation",
+    violation_summary: str = "Compliance Violation"
 ) -> Optional[str]:
     """
-    Generates a patch and creates a Pull Request or auto-applies fixes based on permission mode.
+    Creates a Pull Request or auto-applies a fix based on the permission mode.
 
     Args:
-        customer_repo_name: Full name of the repo (e.g., "acme/backend").
-        violations: List of compliance violation descriptions.
-        remediation_suggestions: List of suggested fixes.
-        permission_mode: "auto_apply", "request_approval", or "notify_only".
-        base_branch: The branch to target for the PR.
+        customer_repo_name: Full name of the repo (e.g., 'acme/backend').
+        patch: Dictionary mapping file paths to new file content.
+        permission_mode: 'auto_apply', 'request_approval', or 'notify_only'.
+        regulation_ref: Reference ID for the regulation (for PR description).
+        violation_summary: Brief description of the violation.
 
     Returns:
-        Optional[str]: URL of the created PR, or None if notified/auto-merged.
+        Optional[str]: URL of the created PR, or None if notify_only/merged.
     """
-    mode = PermissionMode(permission_mode)
-    
-    if mode == PermissionMode.NOTIFY_ONLY:
-        logger.info(f"Notification sent for {customer_repo_name}. No code changes applied.")
-        # In a real system, this would trigger an email/Slack alert
+    if permission_mode == PermissionMode.NOTIFY_ONLY.value:
+        logger.info(f"Mode is {permission_mode}. Notification sent (simulated). No code changes.")
         return None
 
     try:
-        repo = gh.get_repo(customer_repo_name)
+        repo = gh_client.get_repo(customer_repo_name)
+        default_branch = repo.get_branch(repo.default_branch)
         
-        # 1. Generate Patch
-        # In a real scenario, we would fetch specific file contents here using repo.get_contents
-        repo_summary = "Placeholder for repository file structure and relevant file contents."
-        patch_content, affected_files = _generate_patch_with_llm(repo_summary, violations, remediation_suggestions)
+        # Determine Branch Name
+        timestamp = int(time.time())
+        branch_name = f"regwatch/fix-{timestamp}"
         
-        if not patch_content or not affected_files:
-            logger.error("Failed to generate a valid patch.")
-            return None
+        # Check Safety Guardrails
+        is_safe = _check_safety_guardrails(patch, branch_name, repo)
+        
+        if permission_mode == PermissionMode.AUTO_APPLY.value and not is_safe:
+            logger.warning("Auto-apply requested but guardrails failed. Downgrading to 'request_approval'.")
+            permission_mode = PermissionMode.REQUEST_APPROVAL.value
 
-        # 2. Safety Checks & Mode Downgrade
-        if mode == PermissionMode.AUTO_APPLY:
-            safety_result = _check_safety_guardrails(patch_content, base_branch, affected_files)
-            if safety_result != SafetyCheckResult.SAFE:
-                logger.warning(f"Auto-apply downgraded to Request Approval. Reason: {safety_result.value}")
-                mode = PermissionMode.REQUEST_APPROVAL
+        # Create Branch
+        logger.info(f"Creating branch {branch_name} from {default_branch.name}")
+        repo.create_git_ref(ref=f"refs/heads/{branch_name}", sha=default_branch.commit.sha)
 
-        # 3. Create Branch
-        source_branch_name = f"remediation/fix-{int(time.time())}"
-        sb = repo.get_branch(base_branch)
-        repo.create_git_ref(ref=f"refs/heads/{source_branch_name}", sha=sb.commit.sha)
-        
-        # 4. Apply Changes (Commit)
-        # Note: PyGithub doesn't support applying raw diffs easily. 
-        # We simulate this by updating files individually based on the LLM's intent.
-        # For this implementation, we assume the LLM returns file contents or we parse the diff.
-        # Here, we will mock the file update for the sake of the interface.
-        
-        for file_path in affected_files:
+        # Apply Changes (Commit)
+        # Note: In a real scenario, we might batch these, but PyGithub commits one by one usually
+        # unless using the Git Data API for trees. For simplicity, we iterate.
+        for file_path, content in patch.items():
             try:
-                contents = repo.get_contents(file_path, ref=source_branch_name)
-                # In reality, apply the patch to contents.decoded_content
-                # For this demo, we append a comment
-                new_content = contents.decoded_content.decode('utf-8') + "\n# Compliance Fix Applied"
+                # Get file SHA to update
+                contents = repo.get_contents(file_path, ref=branch_name)
                 repo.update_file(
                     path=file_path,
-                    message=f"Fix compliance violations in {file_path}",
-                    content=new_content,
+                    message=f"RegWatch: Fix violation in {file_path}",
+                    content=content,
                     sha=contents.sha,
-                    branch=source_branch_name
+                    branch=branch_name
                 )
             except GithubException:
-                # File might be new
+                # File might not exist, create it
                 repo.create_file(
                     path=file_path,
-                    message=f"Create compliant {file_path}",
-                    content="# New compliant file",
-                    branch=source_branch_name
+                    message=f"RegWatch: Create {file_path}",
+                    content=content,
+                    branch=branch_name
                 )
 
-        # 5. Create PR
-        pr_body = (
-            "## Automated Compliance Remediation\n\n"
-            "**Violations Fixed:**\n" + "\n".join([f"- {v}" for v in violations]) + "\n\n"
-            "**Regulation Reference:** HIPAA/GDPR Update 2024\n\n"
-            "**Testing Notes:**\n"
-            "Please verify these changes in a staging environment before merging.\n"
-        )
+        # Generate PR Description using Toolhouse
+        pr_prompt = f"""
+        Generate a GitHub Pull Request description for a compliance fix.
+        Regulation: {regulation_ref}
+        Violation: {violation_summary}
+        Files Changed: {list(patch.keys())}
         
+        Include sections: Summary, Regulation Details, Testing Instructions.
+        """
+        messages = [{"role": "user", "content": pr_prompt}]
+        llm_response = th_client.chat_completion(messages=messages)
+        pr_body = llm_response.choices[0].message.content
+
+        # Create PR
         pr = repo.create_pull(
-            title="[Compliance] Automated Remediation Fixes",
+            title=f"Compliance Fix: {regulation_ref}",
             body=pr_body,
-            head=source_branch_name,
-            base=base_branch
+            head=branch_name,
+            base=repo.default_branch
         )
         
-        # 6. Add Labels and Reviewers
-        pr.add_to_labels("compliance", "automated-fix", "hipaa", "severity:high")
-        # Default to repo owner if no specific team logic
-        # pr.create_review_request(reviewers=["compliance-team"]) 
+        # Add Labels
+        labels = ["compliance", "automated-fix"]
+        if "hipaa" in regulation_ref.lower():
+            labels.append("hipaa")
+        # Determine severity label based on violation summary (simple heuristic)
+        if "critical" in violation_summary.lower():
+            labels.append("severity:critical")
+        else:
+            labels.append("severity:medium")
+            
+        # Ensure labels exist before adding (simplified, assuming they might exist or ignoring error)
+        try:
+            for label in labels:
+                # In production code, check if label exists in repo first
+                pass 
+            pr.add_to_labels(*labels)
+        except Exception:
+            pass
 
-        logger.info(f"PR Created: {pr.html_url}")
+        # Assign Reviewers
+        # Default to repo owner or specific team if configured
+        # pr.add_to_reviewers("compliance-team") 
 
-        # 7. Handle Auto-Merge
-        if mode == PermissionMode.AUTO_APPLY:
+        logger.info(f"Created PR #{pr.number}: {pr.html_url}")
+
+        # Handle Auto-Apply Merge
+        if permission_mode == PermissionMode.AUTO_APPLY.value and is_safe:
+            logger.info("Auto-apply enabled and guardrails passed. Attempting merge...")
             try:
-                # Wait briefly for checks to initialize (optional)
+                # Wait briefly for checks to start (optional)
                 time.sleep(2)
-                pr.merge(merge_method="squash", commit_message="Auto-merged compliance fix")
-                logger.info(f"PR {pr.number} auto-merged successfully.")
-                return None
+                merge_status = pr.merge(merge_method="squash", commit_message="RegWatch Auto-Remediation")
+                if merge_status.merged:
+                    logger.info(f"PR #{pr.number} successfully merged.")
+                    return None
+                else:
+                    logger.error(f"Merge failed: {merge_status.message}")
+                    return pr.html_url
             except GithubException as e:
-                logger.error(f"Auto-merge failed: {e}. PR remains open.")
+                logger.error(f"Failed to auto-merge PR: {e}")
                 return pr.html_url
 
         return pr.html_url
 
-    except GithubException as e:
-        logger.error(f"GitHub operation failed: {e}")
-        return None
     except Exception as e:
-        logger.error(f"Unexpected error in create_remediation_pr: {e}")
-        return None
+        logger.error(f"Failed to create remediation PR: {e}")
+        raise

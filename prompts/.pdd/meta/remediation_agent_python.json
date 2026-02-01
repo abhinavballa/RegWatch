@@ -1,7 +1,7 @@
 {
   "pdd_version": "0.0.135",
-  "timestamp": "2026-01-31T23:57:24.785975+00:00",
-  "command": "generate",
+  "timestamp": "2026-02-01T00:22:30.816617+00:00",
+  "command": "example",
   "prompt_hash": null,
   "code_hash": null,
   "example_hash": null,
