@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Repositories - RegWatch</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="logo">RegWatch</h1>
+            <div class="nav-links">
+                <a href="/">Dashboard</a>
+                <a href="/scan">Code Scan</a>
+                <a href="/validate">Data Validation</a>
+                <a href="/repos" class="active">Repositories</a>
+                <a href="/history">Change History</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>GitHub Repositories</h1>
+            <p>Connect your GitHub repositories for automated compliance monitoring</p>
+        </div>
+
+        <!-- GitHub Connection Status -->
+        <div class="card github-status" id="github-status">
+            <div class="status-content">
+                <div class="status-icon">🔌</div>
+                <div class="status-info">
+                    <h3>Connect Your GitHub Account</h3>
+                    <p>Link your GitHub account to enable automated compliance checking and PR/Issue creation</p>
+                    <button class="btn btn-primary btn-large" onclick="connectGitHub()">
+                        <span class="github-icon">🐙</span> Connect with GitHub
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Connected Repos Section -->
+        <div class="card connected-repos-section" id="connected-repos-section" style="display: none;">
+            <div class="section-header">
+                <h2>Connected Repositories</h2>
+                <button class="btn btn-secondary" onclick="disconnectGitHub()">Disconnect GitHub</button>
+            </div>
+
+            <div id="connected-repos-list" class="repos-grid">
+                <!-- Connected repos will be populated here -->
+            </div>
+
+            <div id="no-connected-repos" class="no-repos" style="display: none;">
+                <p>No repositories connected yet. Browse available repositories below to get started.</p>
+            </div>
+        </div>
+
+        <!-- Available Repos Section -->
+        <div class="card available-repos-section" id="available-repos-section" style="display: none;">
+            <div class="section-header">
+                <h2>Your GitHub Repositories</h2>
+                <input type="text" id="repo-search" class="search-input" placeholder="Search repositories..." oninput="filterRepos()">
+            </div>
+
+            <div class="repos-filter">
+                <button class="filter-btn active" onclick="filterByLanguage('all')">All</button>
+                <button class="filter-btn" onclick="filterByLanguage('Python')">Python</button>
+                <button class="filter-btn" onclick="filterByLanguage('JavaScript')">JavaScript</button>
+                <button class="filter-btn" onclick="filterByLanguage('Java')">Java</button>
+                <button class="filter-btn" onclick="filterByLanguage('Go')">Go</button>
+            </div>
+
+            <div id="repos-list" class="repos-grid">
+                <!-- Repos will be populated by JavaScript -->
+            </div>
+
+            <div id="loading-repos" class="loading-state">
+                <div class="spinner"></div>
+                <p>Loading your repositories...</p>
+            </div>
+
+            <div id="no-repos" class="no-repos" style="display: none;">
+                <p>No repositories found.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+    <script>
+        let allRepos = [];
+        let connectedRepos = [];
+
+        // Check GitHub connection status on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkGitHubStatus();
+        });
+
+        async function checkGitHubStatus() {
+            try {
+                const response = await fetch('/api/github/repos');
+
+                if (response.status === 401) {
+                    // Not authenticated
+                    document.getElementById('github-status').style.display = 'block';
+                    document.getElementById('connected-repos-section').style.display = 'none';
+                    document.getElementById('available-repos-section').style.display = 'none';
+                } else if (response.ok) {
+                    // Authenticated - load repos
+                    allRepos = await response.json();
+                    showReposList();
+                }
+            } catch (error) {
+                console.error('Error checking GitHub status:', error);
+            }
+        }
+
+        function connectGitHub() {
+            // Redirect to GitHub OAuth
+            window.location.href = '/auth/github';
+        }
+
+        async function disconnectGitHub() {
+            if (!confirm('Are you sure you want to disconnect GitHub? This will remove all connected repositories.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/auth/github/disconnect', { method: 'POST' });
+                if (response.ok) {
+                    window.location.reload();
+                }
+            } catch (error) {
+                console.error('Error disconnecting GitHub:', error);
+                alert('Failed to disconnect GitHub');
+            }
+        }
+
+        function showReposList() {
+            document.getElementById('github-status').style.display = 'none';
+            document.getElementById('connected-repos-section').style.display = 'block';
+            document.getElementById('available-repos-section').style.display = 'block';
+            document.getElementById('loading-repos').style.display = 'none';
+
+            displayRepos(allRepos);
+        }
+
+        function displayRepos(repos) {
+            const reposList = document.getElementById('repos-list');
+            reposList.innerHTML = '';
+
+            if (repos.length === 0) {
+                document.getElementById('no-repos').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('no-repos').style.display = 'none';
+
+            repos.forEach(repo => {
+                const repoCard = createRepoCard(repo);
+                reposList.appendChild(repoCard);
+            });
+        }
+
+        function createRepoCard(repo) {
+            const card = document.createElement('div');
+            card.className = 'repo-card';
+            card.setAttribute('data-language', repo.language || 'Unknown');
+
+            const isConnected = connectedRepos.includes(repo.full_name);
+
+            card.innerHTML = `
+                <div class="repo-header">
+                    <div class="repo-title">
+                        <h3>${repo.name}</h3>
+                        ${repo.private ? '<span class="badge private">Private</span>' : '<span class="badge public">Public</span>'}
+                    </div>
+                    <div class="repo-language">
+                        ${repo.language ? `<span class="language-badge">${repo.language}</span>` : ''}
+                    </div>
+                </div>
+
+                <p class="repo-description">${repo.description || 'No description'}</p>
+
+                <div class="repo-meta">
+                    <span>📍 ${repo.full_name}</span>
+                    <span>🕒 Updated ${formatDate(repo.updated_at)}</span>
+                </div>
+
+                <div class="repo-actions">
+                    ${isConnected ?
+                        `<button class="btn btn-success" disabled>✓ Connected</button>
+                         <button class="btn btn-secondary" onclick="scanRepo('${repo.full_name}')">Scan Now</button>` :
+                        `<button class="btn btn-primary" onclick="connectRepo('${repo.full_name}')">Connect for Monitoring</button>`
+                    }
+                    <a href="${repo.url}" class="btn btn-link" target="_blank">View on GitHub</a>
+                </div>
+            `;
+
+            return card;
+        }
+
+        async function connectRepo(repoFullName) {
+            try {
+                const response = await fetch('/api/github/repos/connect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ repo_full_name: repoFullName })
+                });
+
+                if (response.ok) {
+                    connectedRepos.push(repoFullName);
+                    showNotification(`Repository ${repoFullName} connected successfully`, 'success');
+                    displayRepos(allRepos); // Refresh display
+                } else {
+                    const error = await response.json();
+                    showNotification(error.error || 'Failed to connect repository', 'error');
+                }
+            } catch (error) {
+                console.error('Error connecting repo:', error);
+                showNotification('Failed to connect repository', 'error');
+            }
+        }
+
+        async function scanRepo(repoFullName) {
+            showNotification(`Starting compliance scan for ${repoFullName}...`, 'info');
+
+            try {
+                const response = await fetch(`/api/github/repos/${encodeURIComponent(repoFullName)}/scan`, {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    const results = await response.json();
+                    showNotification(`Scan complete! Compliance score: ${results.compliance_score}/100`, 'success');
+
+                    // Redirect to scan page with results
+                    sessionStorage.setItem('scanResults', JSON.stringify(results));
+                    window.location.href = '/scan';
+                } else {
+                    const error = await response.json();
+                    showNotification(error.error || 'Scan failed', 'error');
+                }
+            } catch (error) {
+                console.error('Error scanning repo:', error);
+                showNotification('Scan failed', 'error');
+            }
+        }
+
+        function filterRepos() {
+            const searchTerm = document.getElementById('repo-search').value.toLowerCase();
+            const filtered = allRepos.filter(repo =>
+                repo.name.toLowerCase().includes(searchTerm) ||
+                repo.full_name.toLowerCase().includes(searchTerm) ||
+                (repo.description && repo.description.toLowerCase().includes(searchTerm))
+            );
+            displayRepos(filtered);
+        }
+
+        function filterByLanguage(language) {
+            const buttons = document.querySelectorAll('.repos-filter .filter-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            if (language === 'all') {
+                displayRepos(allRepos);
+            } else {
+                const filtered = allRepos.filter(repo => repo.language === language);
+                displayRepos(filtered);
+            }
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffDays = Math.floor(diffMs / 86400000);
+
+            if (diffDays === 0) return 'Today';
+            if (diffDays === 1) return 'Yesterday';
+            if (diffDays < 7) return `${diffDays} days ago`;
+            if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+            if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
+            return `${Math.floor(diffDays / 365)} years ago`;
+        }
+
+        function showNotification(message, type = 'info') {
+            // Reuse notification function from dashboard.js
+            if (window.showNotification) {
+                window.showNotification(message, type);
+            } else {
+                alert(message);
+            }
+        }
+    </script>
+</body>
+</html>

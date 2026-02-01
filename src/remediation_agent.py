@@ -237,11 +237,12 @@ def _check_safety_guardrails(
 
 
 def create_remediation_pr(
-    customer_repo_name: str, 
-    patch: Dict[str, str], 
+    customer_repo_name: str,
+    patch: Dict[str, str],
     permission_mode: str,
     regulation_ref: str = "Unknown Regulation",
-    violation_summary: str = "Compliance Violation"
+    violation_summary: str = "Compliance Violation",
+    user_github_token: Optional[str] = None
 ) -> Optional[str]:
     """
     Creates a Pull Request or auto-applies a fix based on the permission mode.
@@ -252,6 +253,7 @@ def create_remediation_pr(
         permission_mode: 'auto_apply', 'request_approval', or 'notify_only'.
         regulation_ref: Reference ID for the regulation (for PR description).
         violation_summary: Brief description of the violation.
+        user_github_token: User's GitHub token (creates PR on THEIR repo, not RegWatch's).
 
     Returns:
         Optional[str]: URL of the created PR, or None if notify_only/merged.
@@ -261,7 +263,10 @@ def create_remediation_pr(
         return None
 
     try:
-        repo = gh_client.get_repo(customer_repo_name)
+        # Use user's GitHub token if provided, otherwise fall back to default
+        # This ensures PRs are created on the USER'S repository with THEIR credentials
+        github_client = Github(user_github_token) if user_github_token else gh_client
+        repo = github_client.get_repo(customer_repo_name)
         default_branch = repo.get_branch(repo.default_branch)
         
         # Determine Branch Name

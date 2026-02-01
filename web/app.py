@@ -519,6 +519,160 @@ def get_pr_diff(pr_number):
         logger.error(f"PR diff retrieval failed: {e}")
         return jsonify({"error": str(e)}), 500
 
+@api_bp.route('/github/repos', methods=['GET'])
+def list_github_repos():
+    """
+    Endpoint: GET /api/github/repos
+    Lists all accessible GitHub repositories for the authenticated user.
+    """
+    from flask import session
+    github_token = session.get('github_token')
+
+    if not github_token:
+        return jsonify({"error": "Not authenticated with GitHub"}), 401
+
+    try:
+        import requests
+        headers = {'Authorization': f'token {github_token}'}
+
+        # Get user's repositories
+        repos_response = requests.get(
+            'https://api.github.com/user/repos',
+            headers=headers,
+            params={'per_page': 100, 'sort': 'updated'}
+        )
+        repos_response.raise_for_status()
+        repos = repos_response.json()
+
+        # Format repo data
+        formatted_repos = [{
+            'id': repo['id'],
+            'name': repo['name'],
+            'full_name': repo['full_name'],
+            'private': repo['private'],
+            'description': repo['description'],
+            'language': repo['language'],
+            'url': repo['html_url'],
+            'updated_at': repo['updated_at']
+        } for repo in repos]
+
+        return jsonify(formatted_repos), 200
+
+    except Exception as e:
+        logger.error(f"Failed to fetch GitHub repos: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@api_bp.route('/github/repos/connect', methods=['POST'])
+def connect_github_repo():
+    """
+    Endpoint: POST /api/github/repos/connect
+    Connects a GitHub repository for compliance monitoring.
+    """
+    from flask import session
+    github_token = session.get('github_token')
+
+    if not github_token:
+        return jsonify({"error": "Not authenticated with GitHub"}), 401
+
+    data = request.get_json()
+    if not data or 'repo_full_name' not in data:
+        return jsonify({"error": "Missing repo_full_name"}), 400
+
+    repo_full_name = data['repo_full_name']
+
+    try:
+        # Store connected repo (in production, save to database)
+        if 'connected_repos' not in session:
+            session['connected_repos'] = []
+
+        if repo_full_name not in session['connected_repos']:
+            session['connected_repos'].append(repo_full_name)
+            session.modified = True
+
+        logger.info(f"Connected repository: {repo_full_name}")
+
+        return jsonify({
+            "status": "success",
+            "repo": repo_full_name,
+            "message": f"Repository {repo_full_name} connected successfully"
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Failed to connect repo: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@api_bp.route('/github/repos/<path:repo_full_name>/scan', methods=['POST'])
+def scan_github_repo(repo_full_name):
+    """
+    Endpoint: POST /api/github/repos/<repo_full_name>/scan
+    Scans a GitHub repository for HIPAA compliance.
+    """
+    from flask import session
+    github_token = session.get('github_token')
+
+    if not github_token:
+        return jsonify({"error": "Not authenticated with GitHub"}), 401
+
+    try:
+        import requests
+        import tempfile
+        import subprocess
+
+        headers = {'Authorization': f'token {github_token}'}
+
+        # Clone repository to temp directory
+        temp_dir = tempfile.mkdtemp()
+        clone_url = f"https://{github_token}@github.com/{repo_full_name}.git"
+
+        logger.info(f"Cloning repository: {repo_full_name}")
+        subprocess.run(['git', 'clone', '--depth', '1', clone_url, temp_dir], check=True, capture_output=True)
+
+        all_findings = []
+
+        # Run compliance checkers
+        if hipaa_encryption_checker:
+            enc_report = hipaa_encryption_checker.check_encryption(temp_dir)
+            all_findings.extend(enc_report.get("findings", []))
+
+        if hipaa_access_control_checker or hipaa_audit_logging_checker:
+            for root, _, files in os.walk(temp_dir):
+                for filename in files:
+                    if filename.endswith(".py"):
+                        full_path = os.path.join(root, filename)
+
+                        if hipaa_access_control_checker:
+                            ac_report = hipaa_access_control_checker.check_access_control(full_path)
+                            all_findings.extend(ac_report.get("findings", []))
+
+                        if hipaa_audit_logging_checker:
+                            audit_report = hipaa_audit_logging_checker.check_audit_logging(full_path)
+                            all_findings.extend(audit_report.get("findings", []))
+
+        # Calculate metrics
+        metrics = calculate_compliance_metrics(all_findings)
+
+        response = {
+            "status": "success",
+            "repo": repo_full_name,
+            "compliance_score": metrics["score"],
+            "estimated_fine_exposure": metrics["estimated_fines"],
+            "severity_breakdown": metrics["severity_breakdown"],
+            "total_violations": len(all_findings),
+            "violations": all_findings
+        }
+
+        # Cleanup
+        cleanup_temp([temp_dir])
+
+        return jsonify(response), 200
+
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Git clone failed: {e}")
+        return jsonify({"error": "Failed to clone repository"}), 500
+    except Exception as e:
+        logger.error(f"Scan failed: {e}")
+        return jsonify({"error": str(e)}), 500
+
 # 2. View Blueprint (HTML)
 view_bp = Blueprint('view', __name__)
 
@@ -537,6 +691,103 @@ def validate_page():
 @view_bp.route('/history')
 def history_page():
     return render_template('history.html')
+
+@view_bp.route('/repos')
+def repos_page():
+    return render_template('repos.html')
+
+# 3. GitHub OAuth Blueprint
+auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
+
+@auth_bp.route('/github')
+def github_login():
+    """
+    Redirects user to GitHub OAuth authorization page.
+    """
+    client_id = os.getenv('GITHUB_CLIENT_ID')
+    if not client_id:
+        return jsonify({"error": "GitHub OAuth not configured"}), 500
+
+    redirect_uri = os.getenv('GITHUB_CALLBACK_URL', 'http://localhost:5001/auth/github/callback')
+    scope = 'repo,read:user'  # Request repo access and user info
+
+    github_auth_url = (
+        f"https://github.com/login/oauth/authorize"
+        f"?client_id={client_id}"
+        f"&redirect_uri={redirect_uri}"
+        f"&scope={scope}"
+        f"&state={os.urandom(16).hex()}"  # CSRF protection
+    )
+
+    from flask import redirect as flask_redirect
+    return flask_redirect(github_auth_url)
+
+@auth_bp.route('/github/callback')
+def github_callback():
+    """
+    Handles GitHub OAuth callback and exchanges code for access token.
+    """
+    code = request.args.get('code')
+    if not code:
+        return jsonify({"error": "No authorization code received"}), 400
+
+    client_id = os.getenv('GITHUB_CLIENT_ID')
+    client_secret = os.getenv('GITHUB_CLIENT_SECRET')
+
+    if not client_id or not client_secret:
+        return jsonify({"error": "GitHub OAuth not configured"}), 500
+
+    # Exchange code for access token
+    token_url = "https://github.com/login/oauth/access_token"
+    headers = {'Accept': 'application/json'}
+    data = {
+        'client_id': client_id,
+        'client_secret': client_secret,
+        'code': code
+    }
+
+    try:
+        import requests
+        response = requests.post(token_url, headers=headers, data=data)
+        response.raise_for_status()
+        token_data = response.json()
+
+        access_token = token_data.get('access_token')
+        if not access_token:
+            return jsonify({"error": "Failed to get access token"}), 500
+
+        # Store token in session
+        from flask import session
+        session['github_token'] = access_token
+
+        # Get user info
+        user_response = requests.get(
+            'https://api.github.com/user',
+            headers={'Authorization': f'token {access_token}'}
+        )
+        user_data = user_response.json()
+        session['github_user'] = user_data.get('login')
+        session['github_user_id'] = user_data.get('id')
+
+        # Redirect to repos page
+        from flask import redirect as flask_redirect
+        return flask_redirect('/repos')
+
+    except Exception as e:
+        logger.error(f"GitHub OAuth callback failed: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@auth_bp.route('/github/disconnect', methods=['POST'])
+def github_disconnect():
+    """
+    Disconnects GitHub integration by clearing session.
+    """
+    from flask import session
+    session.pop('github_token', None)
+    session.pop('github_user', None)
+    session.pop('github_user_id', None)
+
+    return jsonify({"status": "success", "message": "GitHub disconnected"}), 200
 
 # --- Application Factory ---
 
@@ -566,6 +817,7 @@ def create_app(test_config=None):
     # Register Blueprints
     app.register_blueprint(api_bp)
     app.register_blueprint(view_bp)
+    app.register_blueprint(auth_bp)
 
     # Error Handlers
     @app.errorhandler(413)
