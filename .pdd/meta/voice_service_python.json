@@ -1,0 +1,12 @@
+{
+  "pdd_version": "0.0.135",
+  "timestamp": "2026-01-31T20:48:46.758568+00:00",
+  "command": "test",
+  "prompt_hash": "731c866a592fee1ac9d0744a049e61b2cd2cc46f0b07e3b92d24edbe7b626b17",
+  "code_hash": "e7d47d1dac1d5171fff35c3b20eea2036de1b6c1d8ed4384d15c51e814c83c1a",
+  "example_hash": "471641a27734280bc8324d9a091641cde0d72c54bc0c5e6399dde7e5a1a113d6",
+  "test_hash": "8ff34a5dd55d8ad85b99c3b6c488db2f4d0aa57665f31e5373b09d070dcd2731",
+  "test_files": {
+    "test_voice_service.py": "8ff34a5dd55d8ad85b99c3b6c488db2f4d0aa57665f31e5373b09d070dcd2731"
+  }
+}
