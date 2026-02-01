@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "pdd_version": "0.0.135",
+  "timestamp_utc": "20260131T225918Z",
+  "argv": [
+    "--context",
+    "hipaa_audit_logging_checker",
+    "--force",
+    "sync",
+    "hipaa_audit_logging_checker",
+    "--agentic",
+    "--budget",
+    "20",
+    "--max-attempts",
+    "3"
+  ],
+  "cwd": "/tmp/pdd_connect_7797ea7b_34z20qz3",
+  "platform": {
+    "system": "Linux",
+    "release": "6.9.12",
+    "version": "#1 SMP Tue Nov 4 01:12:46 UTC 2025",
+    "python": "3.12.3 (main, Jan  8 2026, 11:30:50) [GCC 13.3.0]"
+  },
+  "global_options": {
+    "force": true,
+    "strength": 1.0,
+    "temperature": 0.0,
+    "time": 0.25,
+    "verbose": false,
+    "quiet": false,
+    "local": false,
+    "context": "hipaa_audit_logging_checker",
+    "output_cost": null,
+    "review_examples": false
+  },
+  "invoked_subcommands": [
+    "sync"
+  ],
+  "total_cost": 0.0,
+  "steps": [
+    {
+      "step": 1,
+      "command": "sync",
+      "cost": 0.0,
+      "model": ""
+    }
+  ],
+  "errors": [],
+  "environment": {
+    "PDD_BOT_USERNAME": "prompt-driven-github[bot]",
+    "PDD_OUTPUT_COST_PATH": "/tmp/pdd_costs.csv",
+    "PATH": "/opt/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+    "PDD_PATH": "/opt/pdd-repo/pdd",
+    "PDD_JWT_TOKEN": "<redacted>",
+    "PDD_AUTO_UPDATE": "false",
+    "PDD_ENV": "prod",
+    "PDD_FORCE": "1",
+    "PDD_SKIP_UPDATE_CHECK": "1"
+  },
+  "file_contents": {
+    ".pdd/meta/patient_data_validator_python.json": "{\n  \"pdd_version\": \"0.0.135\",\n  \"timestamp\": \"2026-01-31T22:35:41.129766+00:00\",\n  \"command\": \"example\",\n  \"prompt_hash\": \"cadeb11eb20bb80645a9bb41affa36fe109c8698743c34123527571176b8f054\",\n  \"code_hash\": \"f53458de373ea0954bfaf307b17b9d50da0651bb613f19f12f325d1da5b76864\",\n  \"example_hash\": \"3b6f0bf58b8970ce3915b9b114631fa9d6e24b3d19124d174956e82747561bf7\",\n  \"test_hash\": null,\n  \"test_files\": {}\n}",
+    ".pdd/meta/hipaa_audit_logging_checker_python.json": "{\n  \"pdd_version\": \"0.0.135\",\n  \"timestamp\": \"2026-01-31T22:34:17.069100+00:00\",\n  \"command\": \"example\",\n  \"prompt_hash\": \"92042745488ffcbf98a46dee680ef8ab85276a49e4db5a303dc3a4647e560f30\",\n  \"code_hash\": \"e475686b409b9eeed27d969993b999d90b5853acd3ff246be2b2912b11c56b93\",\n  \"example_hash\": \"76f79ecb1157a609674b933d079218edfaec4e4d99ae9b3c75c066af2d19c315\",\n  \"test_hash\": null,\n  \"test_files\": {}\n}",
+    ".pdd/meta/voice_service_python.json": "{\n  \"pdd_version\": \"0.0.135\",\n  \"timestamp\": \"2026-01-31T22:29:47.708061+00:00\",\n  \"command\": \"example\",\n  \"prompt_hash\": \"731c866a592fee1ac9d0744a049e61b2cd2cc46f0b07e3b92d24edbe7b626b17\",\n  \"code_hash\": \"b2d9ca207c9543fdbf71ff79f1b044c8d9cf3418732aad2e42f1919cca95916f\",\n  \"example_hash\": \"5cedff86f95ca8fbfbafc6d2c733faf237f5467c8b533163e78aab6d43358b14\",\n  \"test_hash\": null,\n  \"test_files\": {}\n}",
+    ".pdd/meta/hipaa_encryption_checker_python.json": "{\n  \"pdd_version\": \"0.0.135\",\n  \"timestamp\": \"2026-01-31T22:32:28.397225+00:00\",\n  \"command\": \"example\",\n  \"prompt_hash\": \"adb9246d8e4ff2e3dcf7e2b23753e1020972669c8ef6421a4c87aad13ff1e3ab\",\n  \"code_hash\": \"a6497549b36fa2b589b5c544c44f9d70a99d185ecdb73e353ded721373ad0904\",\n  \"example_hash\": \"552197a3044133978df053c1f427d9039cec28dfb68b22c47e3b033fd63022ed\",\n  \"test_hash\": null,\n  \"test_files\": {}\n}",
+    ".pdd/meta/change_tracker_python.json": "{\n  \"pdd_version\": \"0.0.135\",\n  \"timestamp\": \"2026-01-31T22:24:40.787187+00:00\",\n  \"command\": \"test\",\n  \"prompt_hash\": \"1f633862b104a9b6ababcd083ba4819feaaa2d1d6fede3814caab53d95629f1a\",\n  \"code_hash\": \"960a6d8be574824fa6920af9c4f76cbd45c829cc779571ef2a03e4aa934db5ac\",\n  \"example_hash\": \"772683ea7ef25094b260ec95b6bf4324b3f1885a24265d2548e57b777a5a8aa4\",\n  \"test_hash\": \"696f00188e44c2f93bc4a762ca8430052133c023422f891a7f939ac2c2a9b63c\",\n  \"test_files\": {\n    \"test_change_tracker.py\": \"696f00188e44c2f93bc4a762ca8430052133c023422f891a7f939ac2c2a9b63c\"\n  }\n}",
+    ".pdd/meta/hipaa_access_control_checker_python.json": "{\n  \"pdd_version\": \"0.0.135\",\n  \"timestamp\": \"2026-01-31T22:58:21.105634+00:00\",\n  \"command\": \"example\",\n  \"prompt_hash\": \"eea4195188b0969ae08ecac1f8589cbb936f697a5bc9dc74a165ae094525bb12\",\n  \"code_hash\": \"648efafd2b4ba06f63473edf88d1084c961b568d7a53380e311f997196b4e367\",\n  \"example_hash\": \"e52b477f62e1808a694da49d7044de92e47d4cbd7b93d67ed7a50c3805e04999\",\n  \"test_hash\": null,\n  \"test_files\": {}\n}"
+  },
+  "terminal_output": "=== STDOUT ===\n\u256d\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 PDD Sync Starting \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 Basename: hipaa_audit_logging_checker \u2502\n\u2502 Languages: python                     \u2502\n\u2502 Budget: $20.00                        \u2502\n\u2502 Max Attempts: 3                       \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n\n\ud83d\ude80 Syncing for language: python...\nRunning sync in headless mode (CI/non-TTY environment)...\nUsing .pddrc context: hipaa_audit_logging_checker\nInput files:\n  prompt_file     \n/tmp/pdd_connect_7797ea7b_34z20qz3/prompts/hipaa_audit_logging_checker_Python.pr\nompt\n  code_file       \n/tmp/pdd_connect_7797ea7b_34z20qz3/src/checkers/hipaa_audit_logging_checker.py\n  program_file    \n/tmp/pdd_connect_7797ea7b_34z20qz3/examples/hipaa_audit_logging_checker_example.\npy\n  error_file      /tmp/pdd_connect_7797ea7b_34z20qz3/crash.log\nOutput files:\n  output          \n/tmp/pdd_connect_7797ea7b_34z20qz3/src/checkers/hipaa_audit_logging_checker.py\n  output_program  \n/tmp/pdd_connect_7797ea7b_34z20qz3/examples/hipaa_audit_logging_checker_example.\npy\nDetected language: python\nBasename: hipaa_audit_logging_checker\nAttempting to restore original files as the process did not succeed.\nRestored src/checkers/hipaa_audit_logging_checker.py and \nexamples/hipaa_audit_logging_checker_example.py from initial backups.\nAttempting agentic fallback \n(prompt_file='/tmp/pdd_connect_7797ea7b_34z20qz3/prompts/hipaa_audit_logging_che\ncker_Python.prompt')...\nStarting agentic crash fallback (explore mode)...\nPrompt file : \n/tmp/pdd_connect_7797ea7b_34z20qz3/prompts/hipaa_audit_logging_checker_Python.pr\nompt\nCode file   : \n/tmp/pdd_connect_7797ea7b_34z20qz3/src/checkers/hipaa_audit_logging_checker.py\nProgram file: \n/tmp/pdd_connect_7797ea7b_34z20qz3/examples/hipaa_audit_logging_checker_example.\npy\nProject root: /tmp/pdd_connect_7797ea7b_34z20qz3\nAvailable agent providers: anthropic\nSuccessfully loaded prompt: agentic_crash_explore_LLM\nAttempting provider: anthropic for task 'agentic_crash_explore'\nWaiting 5.0s before retry...\nRetry 2/3 for anthropic (task: agentic_crash_explore)\nWaiting 10.0s before retry...\nRetry 3/3 for anthropic (task: agentic_crash_explore)\nProvider anthropic failed after 3 attempts: Exit code 1: \nWarning: Agent output was not valid JSON; using raw output as message.\nVerifying crash fix by running: python \n/tmp/pdd_connect_7797ea7b_34z20qz3/examples/hipaa_audit_logging_checker_example.\npy (cwd=/tmp/pdd_connect_7797ea7b_34z20qz3)\nProgram run succeeded without crashing.\nProgram output:\nCreated sample file: unsafe_medical_app.py\nCreated sample file: safe_medical_app.py\n\n--- Analyzing Non-Compliant File ---\n{\n  \"status\": \"error\",\n  \"message\": \"Module not found. Would analyze unsafe_medical_app.py\"\n}\n\n--- Analyzing Compliant File ---\n{\n  \"status\": \"error\",\n  \"message\": \"Module not found. Would analyze safe_medical_app.py\"\n}\nAgentic crash fallback completed. Success=False\nAgentic fallback failed: All agent providers failed\nCrash fix attempt completed with issues.\nModel used: None\nTotal attempts: 0\nTotal cost: $0.00\nCode saved to: \n/tmp/pdd_connect_7797ea7b_34z20qz3/src/checkers/hipaa_audit_logging_checker.py \n(not modified)\nProgram saved to: \n/tmp/pdd_connect_7797ea7b_34z20qz3/examples/hipaa_audit_logging_checker_example.\npy (not modified)\n                      PDD Sync Complete                       \n\u250f\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2513\n\u2503 Language \u2503 Status \u2503 Cost (USD) \u2503 Details                   \u2503\n\u2521\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2547\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2547\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2547\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2529\n\u2502 python   \u2502 Failed \u2502    $0.0000 \u2502 Operation 'crash' failed. \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n\u256d\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 Total time: 23.53s | Total cost: $0.0000 | Overall status: Failed \u2502\n\u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f\n\n--- Command Execution Summary ---\n  Step 1 (sync): Cost: $0.000000, Model: \nTotal Estimated Cost: $0.000000\n-------------------------------------\n"
+}

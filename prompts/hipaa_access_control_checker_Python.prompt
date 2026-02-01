@@ -23,6 +23,9 @@ Dependencies
   <web>https://csrc.nist.gov/pubs/sp/800/66/r2/final</web>
 </nist_sp_800_66r2_hipaa_security_rule_implementation_guide>
 
+<string_of_includes>
+</string_of_includes>
+
 Instructions
 
 - Create AST visitor classes: AccessControlDetector(ast.NodeVisitor) to detect access control patterns

@@ -16,7 +16,7 @@ Requirements
 Dependencies
 
 <change_tracker>
-  <include>src/change_tracker.py</include>
+  <include>src/change_tracker_example.py</include>
 </change_tracker>
 
 <toolhouse_sdk_documentation_for_agent_deployment_and_tool_usage>
