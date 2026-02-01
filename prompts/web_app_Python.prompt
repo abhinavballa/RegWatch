@@ -16,31 +16,31 @@ Requirements
 Dependencies
 
 <orchestrator>
-  <include>src/orchestrator.py</include>
+  <include>../src/orchestrator.py</include>
 </orchestrator>
 
 <hipaa_encryption_checker>
-  <include>src/checkers/hipaa_encryption_checker.py</include>
+  <include>../src/hipaa_encryption_checker.py</include>
 </hipaa_encryption_checker>
 
 <hipaa_access_control_checker>
-  <include>src/checkers/hipaa_access_control_checker.py</include>
+  <include>../src/hipaa_access_control_checker.py</include>
 </hipaa_access_control_checker>
 
 <hipaa_audit_logging_checker>
-  <include>src/checkers/hipaa_audit_logging_checker.py</include>
+  <include>../src/hipaa_audit_logging_checker.py</include>
 </hipaa_audit_logging_checker>
 
 <patient_data_validator>
-  <include>src/validators/patient_data_validator.py</include>
+  <include>../src/patient_data_validator.py</include>
 </patient_data_validator>
 
 <voice_service>
-  <include>src/voice_service.py</include>
+  <include>../src/voice_service.py</include>
 </voice_service>
 
 <change_tracker>
-  <include>src/change_tracker.py</include>
+  <include>../src/change_tracker.py</include>
 </change_tracker>
 
 <flask_application_factory_pattern_for_configuration>

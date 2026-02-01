@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "pdd_version": "0.0.135",
+  "timestamp_utc": "20260131T235229Z",
+  "argv": [
+    "test",
+    "impact_agent_Python.prompt",
+    "impact_agent.py"
+  ],
+  "cwd": "/Users/trinav/personal/RegWatch/prompts",
+  "platform": {
+    "system": "Darwin",
+    "release": "24.6.0",
+    "version": "Darwin Kernel Version 24.6.0: Mon Jul 14 11:30:29 PDT 2025; root:xnu-11417.140.69~1/RELEASE_ARM64_T6000",
+    "python": "3.12.7 | packaged by Anaconda, Inc. | (main, Oct  4 2024, 08:22:19) [Clang 14.0.6 ]"
+  },
+  "global_options": {
+    "force": false,
+    "strength": null,
+    "temperature": null,
+    "time": 0.25,
+    "verbose": false,
+    "quiet": false,
+    "local": false,
+    "context": null,
+    "output_cost": null,
+    "review_examples": false
+  },
+  "invoked_subcommands": [
+    "test"
+  ],
+  "total_cost": 0.089894,
+  "steps": [
+    {
+      "step": 1,
+      "command": "test",
+      "cost": 0.089894,
+      "model": "vertex_ai/gemini-3-pro-preview"
+    }
+  ],
+  "errors": [],
+  "environment": {
+    "PATH": "/Users/trinav/.local/bin:/opt/anaconda3/bin:/opt/anaconda3/condabin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin",
+    "PDD_PATH": "/Users/trinav/.local/share/uv/tools/pdd-cli/lib/python3.12/site-packages/pdd",
+    "PDD_ENV": "prod"
+  },
+  "file_contents": {
+    ".pdd/meta/hipaa_encryption_checker_python.json": "{\n  \"pdd_version\": \"0.0.135\",\n  \"timestamp\": \"2026-01-31T22:39:13.408333+00:00\",\n  \"command\": \"example\",\n  \"prompt_hash\": null,\n  \"code_hash\": null,\n  \"example_hash\": null,\n  \"test_hash\": null,\n  \"test_files\": null\n}",
+    ".pdd/meta/change_tracker_python.json": "{\n  \"pdd_version\": \"0.0.135\",\n  \"timestamp\": \"2026-01-31T22:49:06.212969+00:00\",\n  \"command\": \"example\",\n  \"prompt_hash\": null,\n  \"code_hash\": null,\n  \"example_hash\": null,\n  \"test_hash\": null,\n  \"test_files\": null\n}",
+    ".pdd/meta/hipaa_audit_logging_checker_python.json": "{\n  \"pdd_version\": \"0.0.135\",\n  \"timestamp\": \"2026-01-31T22:46:01.578171+00:00\",\n  \"command\": \"example\",\n  \"prompt_hash\": null,\n  \"code_hash\": null,\n  \"example_hash\": null,\n  \"test_hash\": null,\n  \"test_files\": null\n}",
+    ".pdd/meta/analysis_agent_python.json": "{\n  \"pdd_version\": \"0.0.135\",\n  \"timestamp\": \"2026-01-31T23:14:30.306264+00:00\",\n  \"command\": \"example\",\n  \"prompt_hash\": null,\n  \"code_hash\": null,\n  \"example_hash\": null,\n  \"test_hash\": null,\n  \"test_files\": null\n}",
+    ".pdd/meta/scraper_agent_python.json": "{\n  \"pdd_version\": \"0.0.135\",\n  \"timestamp\": \"2026-01-31T23:48:53.437477+00:00\",\n  \"command\": \"example\",\n  \"prompt_hash\": null,\n  \"code_hash\": null,\n  \"example_hash\": null,\n  \"test_hash\": null,\n  \"test_files\": null\n}",
+    ".pdd/meta/orchestrator_python.json": "{\n  \"pdd_version\": \"0.0.135\",\n  \"timestamp\": \"2026-01-31T23:35:41.968201+00:00\",\n  \"command\": \"generate\",\n  \"prompt_hash\": null,\n  \"code_hash\": null,\n  \"example_hash\": null,\n  \"test_hash\": null,\n  \"test_files\": null\n}",
+    ".pdd/meta/web_app_python.json": "{\n  \"pdd_version\": \"0.0.135\",\n  \"timestamp\": \"2026-01-31T23:18:55.542304+00:00\",\n  \"command\": \"generate\",\n  \"prompt_hash\": null,\n  \"code_hash\": null,\n  \"example_hash\": null,\n  \"test_hash\": null,\n  \"test_files\": null\n}",
+    ".pdd/meta/voice_service_python.json": "{\n  \"pdd_version\": \"0.0.135\",\n  \"timestamp\": \"2026-01-31T23:31:52.439782+00:00\",\n  \"command\": \"example\",\n  \"prompt_hash\": null,\n  \"code_hash\": null,\n  \"example_hash\": null,\n  \"test_hash\": null,\n  \"test_files\": null\n}",
+    ".pdd/meta/impact_agent_python.json": "{\n  \"pdd_version\": \"0.0.135\",\n  \"timestamp\": \"2026-01-31T23:50:37.855253+00:00\",\n  \"command\": \"example\",\n  \"prompt_hash\": null,\n  \"code_hash\": null,\n  \"example_hash\": null,\n  \"test_hash\": null,\n  \"test_files\": null\n}",
+    ".pdd/meta/patient_data_validator_python.json": "{\n  \"pdd_version\": \"0.0.135\",\n  \"timestamp\": \"2026-01-31T23:32:42.147878+00:00\",\n  \"command\": \"example\",\n  \"prompt_hash\": null,\n  \"code_hash\": null,\n  \"example_hash\": null,\n  \"test_hash\": null,\n  \"test_files\": null\n}",
+    ".pdd/meta/hipaa_access_control_checker_python.json": "{\n  \"pdd_version\": \"0.0.135\",\n  \"timestamp\": \"2026-01-31T23:28:41.603623+00:00\",\n  \"command\": \"example\",\n  \"prompt_hash\": null,\n  \"code_hash\": null,\n  \"example_hash\": null,\n  \"test_hash\": null,\n  \"test_files\": null\n}",
+    ".pdd/meta/remediation_agent_python.json": "{\n  \"pdd_version\": \"0.0.135\",\n  \"timestamp\": \"2026-01-31T23:52:07.746743+00:00\",\n  \"command\": \"generate\",\n  \"prompt_hash\": null,\n  \"code_hash\": null,\n  \"example_hash\": null,\n  \"test_hash\": null,\n  \"test_files\": null\n}"
+  },
+  "terminal_output": "=== STDOUT ===\nChecking for updates...\nUsing .pddrc context: impact_agent\nInput files:\n  prompt_file     \n/Users/trinav/personal/RegWatch/prompts/impact_agent_Python.prom\npt\n  code_file       \n/Users/trinav/personal/RegWatch/prompts/impact_agent.py\nOutput files:\n  output          \n/Users/trinav/personal/RegWatch/prompts/test_impact_agent.py\nDetected language: python\nBasename: impact_agent\nCloud Success\nSuccessfully wrote tests to \n/Users/trinav/personal/RegWatch/prompts/test_impact_agent.py\n\n--- Command Execution Summary ---\n  Step 1 (test): Cost: $0.089894, Model: \nvertex_ai/gemini-3-pro-preview\nTotal Estimated Cost: $0.089894\n-------------------------------------\n"
+}
