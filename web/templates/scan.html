@@ -12,7 +12,6 @@
             <h1 class="logo">RegWatch</h1>
             <div class="nav-links">
                 <a href="/">Dashboard</a>
-                <a href="/repos">Repositories</a>
                 <a href="/scan" class="active">Code Scan</a>
                 <a href="/validate">Data Validation</a>
                 <a href="/history">Change History</a>
@@ -23,12 +22,58 @@
     <div class="container">
         <div class="page-header">
             <h1>Code Compliance Scan</h1>
-            <p>Upload your codebase to check for HIPAA compliance violations</p>
+            <p>Connect your GitHub repositories for automated HIPAA compliance monitoring</p>
         </div>
 
-        <!-- Upload Section -->
-        <div class="card upload-section">
-            <h2>Upload Codebase</h2>
+        <!-- GitHub Connection Status -->
+        <div class="card github-status" id="github-status" style="display: none;">
+            <div class="status-content">
+                <div class="status-icon">🔌</div>
+                <div class="status-info">
+                    <h3>Connect Your GitHub Account</h3>
+                    <p>Link your GitHub account to scan repositories and create automated PRs/Issues</p>
+                    <button class="btn btn-primary btn-large" onclick="connectGitHub()">
+                        <span class="github-icon">🐙</span> Connect with GitHub
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- GitHub Repositories Section -->
+        <div class="card repos-section" id="repos-section" style="display: none;">
+            <div class="section-header">
+                <h2>Your GitHub Repositories</h2>
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <input type="text" id="repo-search" class="search-input" placeholder="Search repositories..." oninput="filterRepos()">
+                    <button class="btn btn-secondary" onclick="disconnectGitHub()">Disconnect</button>
+                </div>
+            </div>
+
+            <div class="repos-filter">
+                <button class="filter-btn active" onclick="filterByLanguage('all')">All</button>
+                <button class="filter-btn" onclick="filterByLanguage('Python')">Python</button>
+                <button class="filter-btn" onclick="filterByLanguage('JavaScript')">JavaScript</button>
+                <button class="filter-btn" onclick="filterByLanguage('Java')">Java</button>
+                <button class="filter-btn" onclick="filterByLanguage('Go')">Go</button>
+            </div>
+
+            <div id="repos-list" class="repos-grid">
+                <!-- Repos will be populated by JavaScript -->
+            </div>
+
+            <div id="loading-repos" class="loading-state">
+                <div class="spinner"></div>
+                <p>Loading your repositories...</p>
+            </div>
+
+            <div id="no-repos" class="no-repos" style="display: none;">
+                <p>No repositories found.</p>
+            </div>
+        </div>
+
+        <!-- Upload Section (Alternative) -->
+        <div class="card upload-section" id="upload-section" style="display: none;">
+            <h2>Or Upload Codebase Manually</h2>
             <div class="upload-zone" id="upload-zone">
                 <div class="upload-icon">📦</div>
                 <p class="upload-text">Drag and drop your codebase ZIP file here</p>
@@ -168,7 +213,8 @@
 
             <!-- Violations List -->
             <div class="violations-section">
-                <h3>Violations Detected</h3>
+                <h3>Compliance Issues</h3>
+                <p class="text-muted">Each issue can be automatically fixed with a Pull Request or tracked with a GitHub Issue</p>
                 <div class="violations-filter">
                     <button class="filter-btn active" onclick="filterViolations('all')">All</button>
                     <button class="filter-btn" onclick="filterViolations('critical')">Critical</button>
@@ -195,6 +241,250 @@
     <script>
         let uploadedFile = null;
         let scanResults = null;
+        let allRepos = [];
+        let currentRepo = null;
+
+        // Check GitHub status on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkGitHubStatus();
+        });
+
+        async function checkGitHubStatus() {
+            console.log('Checking GitHub authentication status...');
+
+            try {
+                const response = await fetch('/api/github/repos');
+                console.log('GitHub API response status:', response.status);
+
+                if (response.status === 401) {
+                    // Not authenticated - show connect button
+                    console.log('Not authenticated - showing connect button');
+                    document.getElementById('github-status').style.display = 'block';
+                    document.getElementById('repos-section').style.display = 'none';
+                    document.getElementById('upload-section').style.display = 'block';
+                } else if (response.ok) {
+                    // Authenticated - load repos
+                    allRepos = await response.json();
+                    console.log('Loaded repositories:', allRepos.length, 'repos');
+                    console.log('Repository data:', allRepos);
+                    showReposList();
+                } else {
+                    console.error('Unexpected response status:', response.status);
+                    document.getElementById('github-status').style.display = 'block';
+                    document.getElementById('upload-section').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error checking GitHub status:', error);
+                document.getElementById('github-status').style.display = 'block';
+                document.getElementById('upload-section').style.display = 'block';
+            }
+        }
+
+        function connectGitHub() {
+            window.location.href = '/auth/github';
+        }
+
+        async function disconnectGitHub() {
+            if (!confirm('Disconnect GitHub? You will need to reconnect to scan repositories.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/auth/github/disconnect', { method: 'POST' });
+                if (response.ok) {
+                    window.location.reload();
+                }
+            } catch (error) {
+                console.error('Error disconnecting GitHub:', error);
+                alert('Failed to disconnect GitHub');
+            }
+        }
+
+        function showReposList() {
+            console.log('Showing repos list...');
+            document.getElementById('github-status').style.display = 'none';
+            document.getElementById('repos-section').style.display = 'block';
+            document.getElementById('upload-section').style.display = 'block';
+            document.getElementById('loading-repos').style.display = 'none';
+
+            console.log('Displaying', allRepos.length, 'repositories');
+            displayRepos(allRepos);
+        }
+
+        function displayRepos(repos) {
+            console.log('displayRepos called with', repos.length, 'repos');
+            const reposList = document.getElementById('repos-list');
+
+            if (!reposList) {
+                console.error('repos-list element not found!');
+                return;
+            }
+
+            reposList.innerHTML = '';
+
+            if (repos.length === 0) {
+                console.log('No repositories found');
+                document.getElementById('no-repos').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('no-repos').style.display = 'none';
+
+            repos.forEach((repo, index) => {
+                console.log(`Creating card for repo ${index + 1}:`, repo.full_name);
+                const repoCard = createRepoCard(repo);
+                reposList.appendChild(repoCard);
+            });
+
+            console.log('Finished displaying all repos');
+        }
+
+        function createRepoCard(repo) {
+            const card = document.createElement('div');
+            card.className = 'repo-card';
+            card.setAttribute('data-language', repo.language || 'Unknown');
+
+            card.innerHTML = `
+                <div class="repo-header">
+                    <div class="repo-title">
+                        <h3>${repo.name}</h3>
+                        ${repo.private ? '<span class="badge private">Private</span>' : '<span class="badge public">Public</span>'}
+                    </div>
+                    <div class="repo-language">
+                        ${repo.language ? `<span class="language-badge">${repo.language}</span>` : ''}
+                    </div>
+                </div>
+
+                <p class="repo-description">${repo.description || 'No description'}</p>
+
+                <div class="repo-meta">
+                    <span>📍 ${repo.full_name}</span>
+                    <span>🕒 Updated ${formatDate(repo.updated_at)}</span>
+                </div>
+
+                <div class="repo-actions">
+                    <button class="btn btn-primary" onclick="connectForMonitoring('${repo.full_name}')">
+                        🔗 Connect for Monitoring
+                    </button>
+                    <a href="${repo.url}" class="btn btn-link" target="_blank">View on GitHub</a>
+                </div>
+            `;
+
+            return card;
+        }
+
+        async function connectForMonitoring(repoFullName) {
+            // Connect the repo and immediately scan it
+            showNotification(`Connecting ${repoFullName} and starting compliance scan...`, 'info');
+
+            try {
+                // Step 1: Connect the repository
+                const connectResponse = await fetch('/api/github/repos/connect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ repo_full_name: repoFullName })
+                });
+
+                if (!connectResponse.ok) {
+                    const error = await connectResponse.json();
+                    throw new Error(error.error || 'Failed to connect repository');
+                }
+
+                showNotification(`Repository connected! Scanning for compliance issues...`, 'success');
+
+                // Step 2: Automatically scan the repository
+                currentRepo = repoFullName;
+
+                // Hide repos section, show progress
+                document.getElementById('repos-section').style.display = 'none';
+                document.getElementById('upload-section').style.display = 'none';
+                document.getElementById('progress-section').style.display = 'block';
+                document.getElementById('results-section').style.display = 'none';
+
+                // Simulate progress
+                await updateProgress(10, 'Cloning repository...', 'Cloning repository from GitHub', 'upload');
+
+                const scanResponse = await fetch(`/api/github/repos/${encodeURIComponent(repoFullName)}/scan`, {
+                    method: 'POST'
+                });
+
+                await updateProgress(40, 'Checking encryption...', 'Scanning for encryption compliance', 'encryption');
+                await updateProgress(60, 'Checking access control...', 'Analyzing authentication', 'access');
+                await updateProgress(80, 'Checking audit logging...', 'Validating audit trails', 'audit');
+
+                if (!scanResponse.ok) {
+                    const error = await scanResponse.json();
+                    throw new Error(error.error || 'Scan failed');
+                }
+
+                const results = await scanResponse.json();
+
+                await updateProgress(100, 'Creating PRs and Issues...', 'Generating remediation PRs and tracking issues', 'report');
+
+                // Display results
+                displayResults(results);
+                showNotification(`Scan complete! Found ${results.total_violations} compliance issues`,
+                    results.compliance_score >= 70 ? 'success' : 'warning');
+
+            } catch (error) {
+                console.error('Error during connect and scan:', error);
+                showNotification(error.message || 'Failed to connect and scan repository', 'error');
+
+                // Show repos section again
+                document.getElementById('repos-section').style.display = 'block';
+                document.getElementById('progress-section').style.display = 'none';
+            }
+        }
+
+        function filterRepos() {
+            const searchTerm = document.getElementById('repo-search').value.toLowerCase();
+            const filtered = allRepos.filter(repo =>
+                repo.name.toLowerCase().includes(searchTerm) ||
+                repo.full_name.toLowerCase().includes(searchTerm) ||
+                (repo.description && repo.description.toLowerCase().includes(searchTerm))
+            );
+            displayRepos(filtered);
+        }
+
+        function filterByLanguage(language) {
+            const buttons = document.querySelectorAll('.repos-filter .filter-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            if (language === 'all') {
+                displayRepos(allRepos);
+            } else {
+                const filtered = allRepos.filter(repo => repo.language === language);
+                displayRepos(filtered);
+            }
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffDays = Math.floor(diffMs / 86400000);
+
+            if (diffDays === 0) return 'Today';
+            if (diffDays === 1) return 'Yesterday';
+            if (diffDays < 7) return `${diffDays} days ago`;
+            if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+            if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
+            return `${Math.floor(diffDays / 365)} years ago`;
+        }
+
+        function showNotification(message, type = 'info') {
+            // Try to use the dashboard notification system
+            if (typeof window.displayNotification === 'function') {
+                window.displayNotification(message, type);
+            } else {
+                // Fallback to simple alert
+                console.log(`[${type.toUpperCase()}]`, message);
+                if (type === 'error') {
+                    alert('Error: ' + message);
+                }
+            }
+        }
 
         // Drag and drop handlers
         const uploadZone = document.getElementById('upload-zone');
@@ -322,9 +612,35 @@
         function displayResults(data) {
             scanResults = data;
 
+            console.log('Displaying results:', data);
+
             // Hide progress, show results
             document.getElementById('progress-section').style.display = 'none';
             document.getElementById('results-section').style.display = 'block';
+
+            // Scroll to results section
+            document.getElementById('results-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            // Add repository info to results if scanning a GitHub repo
+            if (currentRepo) {
+                const resultsSection = document.getElementById('results-section');
+                const existingRepoInfo = resultsSection.querySelector('.repo-info-header');
+                if (existingRepoInfo) {
+                    existingRepoInfo.remove();
+                }
+
+                const repoInfoHeader = document.createElement('div');
+                repoInfoHeader.className = 'repo-info-header';
+                repoInfoHeader.style.cssText = 'margin-bottom: 1.5rem; padding: 1rem; background: var(--bg-secondary); border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center;';
+                repoInfoHeader.innerHTML = `
+                    <div>
+                        <h3 style="margin: 0; margin-bottom: 0.25rem;">📊 Compliance Report: ${currentRepo}</h3>
+                        <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">Scanned ${new Date().toLocaleString()}</p>
+                    </div>
+                    <button class="btn btn-secondary" onclick="backToRepos()">← Back to Repositories</button>
+                `;
+                resultsSection.insertBefore(repoInfoHeader, resultsSection.firstChild);
+            }
 
             // Populate summary
             document.getElementById('result-score').textContent = data.compliance_score + '/100';
@@ -363,15 +679,84 @@
             div.className = 'violation-item';
             div.setAttribute('data-severity', violation.severity.toLowerCase());
 
+            // Determine if issue is auto-fixable based on severity and type
+            const isAutoFixable = violation.severity.toLowerCase() !== 'critical' &&
+                                  violation.fix_available !== false;
+
+            // Generate GitHub action buttons
+            let githubActions = '';
+            if (currentRepo) {
+                if (violation.pr_url) {
+                    // PR already created
+                    githubActions = `
+                        <div class="github-actions">
+                            <a href="${violation.pr_url}" target="_blank" class="btn btn-success btn-sm">
+                                📝 View Pull Request
+                            </a>
+                        </div>
+                    `;
+                } else if (violation.issue_url) {
+                    // Issue already created
+                    githubActions = `
+                        <div class="github-actions">
+                            <a href="${violation.issue_url}" target="_blank" class="btn btn-warning btn-sm">
+                                🐛 View Issue
+                            </a>
+                        </div>
+                    `;
+                } else if (isAutoFixable) {
+                    // Can create PR - pass full violation object
+                    const violationJson = JSON.stringify({
+                        id: violation.id || Math.random(),
+                        file: violation.file,
+                        line: violation.line,
+                        message: violation.message,
+                        severity: violation.severity,
+                        regulation: violation.regulation || 'HIPAA § 164.312'
+                    });
+
+                    githubActions = `
+                        <div class="github-actions">
+                            <button class="btn btn-primary btn-sm" onclick='createPR(${violationJson})'>
+                                ✨ Create Auto-Fix PR
+                            </button>
+                            <button class="btn btn-secondary btn-sm" onclick='createIssue(${violationJson})'>
+                                📋 Create Issue
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    // Only issue creation available
+                    const violationJson = JSON.stringify({
+                        id: violation.id || Math.random(),
+                        file: violation.file,
+                        line: violation.line,
+                        message: violation.message,
+                        severity: violation.severity,
+                        regulation: violation.regulation || 'HIPAA § 164.312'
+                    });
+
+                    githubActions = `
+                        <div class="github-actions">
+                            <button class="btn btn-warning btn-sm" onclick='createIssue(${violationJson})'>
+                                🐛 Create Issue (Manual Fix Required)
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+
             div.innerHTML = `
                 <div class="violation-header">
                     <span class="severity-badge ${violation.severity.toLowerCase()}">${violation.severity}</span>
                     <h4>${violation.title || violation.message}</h4>
+                    ${isAutoFixable ? '<span class="badge badge-success">Auto-fixable</span>' : '<span class="badge badge-warning">Manual fix</span>'}
                 </div>
                 <p class="violation-message">${violation.message}</p>
                 <div class="violation-location">
                     <code>${violation.file}:${violation.line || '?'}</code>
                 </div>
+                ${githubActions}
                 <details class="violation-details">
                     <summary>View Details & Remediation</summary>
                     <div class="violation-content">
@@ -385,6 +770,101 @@
             `;
 
             return div;
+        }
+
+        function escapeForAttribute(text) {
+            return String(text).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        }
+
+        async function createPR(violationData) {
+            if (!currentRepo) {
+                alert('No repository selected');
+                return;
+            }
+
+            console.log('Creating PR with violation data:', violationData);
+            showNotification('Generating AI-powered compliance fix...', 'info');
+
+            try {
+                const response = await fetch('/api/github/create-pr', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        repo: currentRepo,
+                        violation_id: violationData.id,
+                        file: violationData.file,
+                        line: violationData.line,
+                        severity: violationData.severity,
+                        regulation: violationData.regulation,
+                        violation_message: violationData.message
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showNotification('Pull Request created successfully!', 'success');
+
+                    // Open PR in new tab
+                    if (data.pr_url) {
+                        window.open(data.pr_url, '_blank');
+
+                        // Refresh results to show the PR link
+                        setTimeout(() => window.location.reload(), 1000);
+                    }
+                } else {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to create PR');
+                }
+            } catch (error) {
+                console.error('Error creating PR:', error);
+                showNotification(error.message || 'Failed to create PR', 'error');
+            }
+        }
+
+        async function createIssue(violationData) {
+            if (!currentRepo) {
+                alert('No repository selected');
+                return;
+            }
+
+            console.log('Creating issue with violation data:', violationData);
+            showNotification('Creating GitHub issue...', 'info');
+
+            try {
+                const response = await fetch('/api/github/create-issue', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        repo: currentRepo,
+                        violation_id: violationData.id,
+                        title: (violationData.message || violationData.description || 'Compliance Issue').substring(0, 60),
+                        body: violationData.message || violationData.description || 'No description available',
+                        file: violationData.file,
+                        line: violationData.line,
+                        severity: violationData.severity,
+                        regulation: violationData.regulation
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showNotification('GitHub Issue created successfully!', 'success');
+
+                    // Open issue in new tab
+                    if (data.issue_url) {
+                        window.open(data.issue_url, '_blank');
+
+                        // Refresh results to show the issue link
+                        setTimeout(() => window.location.reload(), 1000);
+                    }
+                } else {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to create issue');
+                }
+            } catch (error) {
+                console.error('Error creating issue:', error);
+                showNotification(error.message || 'Failed to create issue', 'error');
+            }
         }
 
         function escapeHtml(text) {
@@ -448,6 +928,20 @@
             document.getElementById('progress-section').style.display = 'none';
             document.getElementById('results-section').style.display = 'none';
             clearFile();
+        }
+
+        function backToRepos() {
+            // Hide results, show repos
+            document.getElementById('results-section').style.display = 'none';
+            document.getElementById('progress-section').style.display = 'none';
+            document.getElementById('repos-section').style.display = 'block';
+            document.getElementById('upload-section').style.display = 'block';
+
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // Clear current repo
+            currentRepo = null;
         }
     </script>
 </body>

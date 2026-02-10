@@ -673,6 +673,226 @@ def scan_github_repo(repo_full_name):
         logger.error(f"Scan failed: {e}")
         return jsonify({"error": str(e)}), 500
 
+@api_bp.route('/github/create-pr', methods=['POST'])
+def create_github_pr():
+    """
+    Creates a Pull Request with AI-generated fix for a compliance violation.
+    """
+    from flask import session
+    from openai import OpenAI
+    from github import Github
+    import time
+
+    github_token = session.get('github_token')
+    if not github_token:
+        return jsonify({"error": "Not authenticated with GitHub"}), 401
+
+    data = request.get_json()
+    repo_full_name = data.get('repo')
+    file_path = data.get('file', '')
+    violation_message = data.get('violation_message', 'Compliance violation detected')
+    violation_title = data.get('title', 'Compliance Issue')
+    line_number = data.get('line', '?')
+    remediation = data.get('remediation', '')
+    regulation = data.get('regulation', 'HIPAA')
+    severity = data.get('severity', 'medium')
+
+    logger.info(f"Creating PR for {repo_full_name}, file: {file_path}, violation: {violation_title}")
+
+    try:
+        # Initialize clients
+        gh = Github(github_token)
+        repo = gh.get_repo(repo_full_name)
+        openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+        # Clean file path - handle temp directory paths while preserving structure
+        # /var/folders/.../tmp.../web/app.py -> web/app.py
+        original_file_path = file_path
+        if file_path.startswith('/') and '/tmp' in file_path:
+            parts = file_path.split('/')
+            # Find the temp directory
+            for i, part in enumerate(parts):
+                if part.startswith('tmp'):
+                    # Take everything after temp dir
+                    file_path = '/'.join(parts[i+1:])
+                    break
+
+        logger.info(f"Cleaned file path from '{original_file_path}' to '{file_path}'")
+
+        # Get current file content
+        try:
+            file_content = repo.get_contents(file_path, ref=repo.default_branch)
+            current_code = file_content.decoded_content.decode('utf-8')
+        except Exception as e:
+            return jsonify({"error": f"File not found: {file_path}"}), 404
+
+        # Generate AI fix with comprehensive context
+        fix_prompt = f"""You are a HIPAA compliance expert. Fix this specific violation in the code.
+
+**Violation Details:**
+- Type: {violation_title}
+- Description: {violation_message}
+- Location: Line {line_number}
+- Regulation: {regulation}
+- Severity: {severity}
+- Recommended Fix: {remediation}
+
+**Current Code ({file_path}):**
+```python
+{current_code}
+```
+
+**Instructions:**
+1. Fix ONLY the specific violation mentioned above
+2. Preserve all other functionality unchanged
+3. Follow HIPAA best practices for {regulation}
+4. Return the COMPLETE file content with the fix applied
+5. Do NOT include any explanations, markdown formatting, or code fence markers
+6. Return ONLY the raw Python code
+
+**Your response should be the complete, valid Python file ready to commit:**"""
+
+        response = openai_client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are a HIPAA compliance code remediation expert. Always return complete, valid Python code without any markdown formatting or explanations."},
+                {"role": "user", "content": fix_prompt}
+            ],
+            temperature=0.2,  # Lower temperature for more consistent fixes
+            max_tokens=4000   # Allow larger responses for complete files
+        )
+
+        fixed_code = response.choices[0].message.content.strip()
+
+        # Remove markdown code fences if GPT-4 added them despite instructions
+        if fixed_code.startswith('```'):
+            lines = fixed_code.split('\n')
+            # Remove first line (```python or ```) and last line (```)
+            fixed_code = '\n'.join(lines[1:-1]) if len(lines) > 2 else fixed_code
+
+        # Remove any remaining markdown artifacts
+        fixed_code = fixed_code.strip('`').strip()
+
+        logger.info(f"Generated fix: {len(fixed_code)} characters")
+
+        # Create branch
+        default_branch = repo.get_branch(repo.default_branch)
+        branch_name = f"regwatch/compliance-fix-{int(time.time())}"
+        repo.create_git_ref(ref=f"refs/heads/{branch_name}", sha=default_branch.commit.sha)
+
+        # Commit the fix
+        repo.update_file(
+            path=file_path,
+            message=f"Fix: {violation_message[:60]}",
+            content=fixed_code,
+            sha=file_content.sha,
+            branch=branch_name
+        )
+
+        # Create PR with detailed description
+        pr_description = f"""## Compliance Fix
+
+**Regulation**: {regulation}
+**Severity**: {severity}
+**File**: `{file_path}`
+
+### Violation
+{violation_message}
+
+### Changes Made
+- Updated code to meet {regulation} requirements
+- Fixed compliance issues identified by automated scan
+
+### Testing
+- [ ] Review code changes
+- [ ] Run compliance scan to verify fix
+- [ ] Test affected functionality
+
+---
+🤖 Generated by [RegWatch](https://github.com/abhinavballa/RegWatch)
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"""
+
+        pr = repo.create_pull(
+            title=f"Compliance Fix: {violation_message[:50]}",
+            body=pr_description,
+            head=branch_name,
+            base=repo.default_branch
+        )
+
+        logger.info(f"Created PR #{pr.number} for {repo_full_name}")
+        return jsonify({"pr_url": pr.html_url, "pr_number": pr.number}), 200
+
+    except Exception as e:
+        logger.error(f"PR creation failed: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@api_bp.route('/github/create-issue', methods=['POST'])
+def create_github_issue():
+    """
+    Creates a detailed GitHub Issue for a compliance violation.
+    """
+    from flask import session
+    from github import Github
+
+    github_token = session.get('github_token')
+    if not github_token:
+        return jsonify({"error": "Not authenticated with GitHub"}), 401
+
+    data = request.get_json()
+    repo_full_name = data.get('repo')
+    title = data.get('title', 'Compliance Issue')
+    violation_message = data.get('body', 'Compliance violation detected')
+    file_path = data.get('file', 'unknown')
+    line = data.get('line', '?')
+    severity = data.get('severity', 'medium')
+    regulation = data.get('regulation', 'HIPAA')
+
+    try:
+        gh = Github(github_token)
+        repo = gh.get_repo(repo_full_name)
+
+        # Create comprehensive issue description
+        issue_body = f"""## Compliance Violation Detected
+
+### Details
+- **Severity**: {severity.upper()}
+- **Regulation**: {regulation}
+- **File**: `{file_path}:{line}`
+
+### Description
+{violation_message}
+
+### Required Actions
+1. Review the code at the specified location
+2. Understand the compliance requirement
+3. Implement the necessary fixes to meet {regulation} standards
+4. Test the changes thoroughly
+5. Run a new compliance scan to verify the fix
+
+### Resources
+- [HIPAA Security Rule](https://www.hhs.gov/hipaa/for-professionals/security/index.html)
+- [HIPAA Compliance Checklist](https://www.hhs.gov/hipaa/for-professionals/security/guidance/index.html)
+
+### Estimated Fine Exposure
+Violations of this type can result in fines ranging from $100 to $50,000 per incident.
+
+---
+🤖 Detected by [RegWatch](https://github.com/abhinavballa/RegWatch) automated compliance monitoring"""
+
+        issue = repo.create_issue(
+            title=f"[{severity.upper()}] {title}",
+            body=issue_body,
+            labels=['compliance', f'severity:{severity}', regulation.lower().replace(' ', '-')]
+        )
+
+        logger.info(f"Created issue #{issue.number} for {repo_full_name}")
+        return jsonify({"issue_url": issue.html_url, "issue_number": issue.number}), 200
+
+    except Exception as e:
+        logger.error(f"Issue creation failed: {e}")
+        return jsonify({"error": str(e)}), 500
+
 # 2. View Blueprint (HTML)
 view_bp = Blueprint('view', __name__)
 

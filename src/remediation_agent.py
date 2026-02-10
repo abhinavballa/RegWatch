@@ -18,7 +18,7 @@ Dependencies:
 - os, re, time: Standard library utilities.
 
 Environment Variables:
-- TOOLHOUSE_API_KEY: API key for Toolhouse SDK.
+- OPENAI_API_KEY: API key for OpenAI API.
 - GITHUB_TOKEN: Personal Access Token for GitHub API.
 - REGWATCH_REPO: Name of the central RegWatch repository (e.g., "org/regwatch-core").
 """
@@ -33,7 +33,7 @@ from enum import Enum
 from github import Github, GithubException
 from github.Repository import Repository
 from github.PullRequest import PullRequest
-from toolhouse import Toolhouse
+from openai import OpenAI
 
 # Configure Logger
 logging.basicConfig(level=logging.INFO)
@@ -64,7 +64,7 @@ class PermissionMode(Enum):
 # Initialize Clients
 try:
     gh_client = Github(os.getenv("GITHUB_TOKEN"))
-    th_client = Toolhouse(api_key=os.getenv("TOOLHOUSE_API_KEY"))
+    openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 except Exception as e:
     logger.error(f"Failed to initialize clients: {e}")
     raise
@@ -217,14 +217,18 @@ def _check_safety_guardrails(
             logger.warning(f"Guardrail Fail: Sensitive keyword match '{pattern}'.")
             return False
             
-    # Toolhouse LLM Check (Double check for semantic context)
-    # We ask Toolhouse if this looks like a security-critical change
+    # OpenAI LLM Check (Double check for semantic context)
+    # We ask OpenAI if this looks like a security-critical change
     messages = [{
         "role": "user",
         "content": f"Analyze this code patch for security sensitivity. Does it modify authentication, encryption, or access control logic? Reply only 'YES' or 'NO'.\n\n{full_patch_content[:2000]}" # Truncate for token limits if needed
     }]
     try:
-        response = th_client.chat_completion(messages=messages, model="claude-3-haiku") # Using a fast model
+        response = openai_client.chat.completions.create(
+            model="gpt-3.5-turbo",  # Using a fast, cost-effective model
+            messages=messages,
+            temperature=0
+        )
         content = response.choices[0].message.content.strip().upper()
         if "YES" in content:
             logger.warning("Guardrail Fail: LLM identified security-sensitive logic.")
@@ -307,17 +311,21 @@ def create_remediation_pr(
                     branch=branch_name
                 )
 
-        # Generate PR Description using Toolhouse
+        # Generate PR Description using OpenAI
         pr_prompt = f"""
         Generate a GitHub Pull Request description for a compliance fix.
         Regulation: {regulation_ref}
         Violation: {violation_summary}
         Files Changed: {list(patch.keys())}
-        
+
         Include sections: Summary, Regulation Details, Testing Instructions.
         """
         messages = [{"role": "user", "content": pr_prompt}]
-        llm_response = th_client.chat_completion(messages=messages)
+        llm_response = openai_client.chat.completions.create(
+            model="gpt-4",
+            messages=messages,
+            temperature=0.3
+        )
         pr_body = llm_response.choices[0].message.content
 
         # Create PR
